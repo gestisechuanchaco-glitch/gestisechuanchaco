@@ -5,6 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:prod": "ng build --configuration production",
+    "deploy": "npm run build:prod && powershell -ExecutionPolicy Bypass -File deploy-gh-pages.ps1",
+    "deploy:full": "powershell -ExecutionPolicy Bypass -File deploy-completo.ps1",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

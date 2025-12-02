@@ -6,7 +6,13 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt'); // 🔐 Librería para hashear contraseñas
 const notificacionesService = require('./notificaciones.service'); // 📧 Servicio de notificaciones
+const { spawn } = require('child_process'); // Para ejecutar el script de Python
+const http = require('http'); // Para hacer proxy a Python
 const app = express();
+
+// ====== CONFIGURACIÓN DE URL BASE ======
+// Cambia esta URL cuando uses ngrok o despliegues en producción
+const BASE_URL = process.env.BASE_URL || 'https://touchedly-unbegrudged-natividad.ngrok-free.dev';
 
 // ====== Crear carpeta uploads si no existe ======
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -27,12 +33,34 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-app.use(cors());
+// Configuración CORS para ngrok y GitHub Pages
+app.use(cors({
+  origin: [
+    'https://gestisechuanchaco-glitch.github.io',
+    'https://touchedly-unbegrudged-natividad.ngrok-free.dev',
+    'http://localhost:4200',
+    'http://localhost:3000'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'ngrok-skip-browser-warning']
+}));
+
+// Headers para ngrok
+app.use((req, res, next) => {
+  res.setHeader('ngrok-skip-browser-warning', 'true');
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+// Servir archivos estáticos con CORS mejorado
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
-  setHeaders: (res) => {
+  setHeaders: (res, path) => {
     res.set('Access-Control-Allow-Origin', '*');
+    res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.set('Access-Control-Allow-Headers', 'Content-Type');
+    res.set('ngrok-skip-browser-warning', 'true');
   }
 }));
 
@@ -75,6 +103,56 @@ function getField(data, ...fields) {
   }
   return null;
 }
+
+// ====== PROXY PARA EL SERVICIO DE PREDICCIÓN DE PYTHON ======
+// Redirige las peticiones /predict/predict_riesgo al servicio de Python en localhost:5000
+app.post('/predict/predict_riesgo', (req, res) => {
+  const pythonUrl = 'http://localhost:5000/predict_riesgo';
+  
+  console.log('[PROXY] Redirigiendo petición de predicción a Python...');
+  console.log('[PROXY] Datos recibidos:', JSON.stringify(req.body));
+  
+  const options = {
+    hostname: 'localhost',
+    port: 5000,
+    path: '/predict_riesgo',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': JSON.stringify(req.body).length
+    }
+  };
+
+  const proxyReq = http.request(options, (proxyRes) => {
+    let data = '';
+    
+    proxyRes.on('data', (chunk) => {
+      data += chunk;
+    });
+    
+    proxyRes.on('end', () => {
+      try {
+        const jsonData = JSON.parse(data);
+        res.status(proxyRes.statusCode).json(jsonData);
+        console.log('[PROXY] ✅ Respuesta de Python enviada al cliente:', jsonData);
+      } catch (e) {
+        res.status(proxyRes.statusCode).send(data);
+        console.log('[PROXY] ✅ Respuesta de Python enviada al cliente (texto)');
+      }
+    });
+  });
+
+  proxyReq.on('error', (err) => {
+    console.error('[PROXY] ❌ Error al conectar con Python:', err.message);
+    res.status(503).json({ 
+      error: 'Servicio de predicción no disponible',
+      message: 'El servidor de Python no está respondiendo. Verifica que esté corriendo en el puerto 5000.'
+    });
+  });
+
+  proxyReq.write(JSON.stringify(req.body));
+  proxyReq.end();
+});
 
 // ====== LOGIN ACTUALIZADO CON BCRYPT 🔐 ======
 app.post('/login', (req, res) => {
@@ -132,7 +210,7 @@ app.post('/login', (req, res) => {
         } else if (user.foto_perfil.startsWith('data:')) {
           fotoPerfilUrl = user.foto_perfil;
         } else {
-          fotoPerfilUrl = `http://localhost:3000${user.foto_perfil}`;
+          fotoPerfilUrl = `${BASE_URL}${user.foto_perfil}`;
         }
       }
       
@@ -1387,6 +1465,7 @@ app.put('/api/solicitud/:id/estado', (req, res) => {
 
 // ====== LOCALES ======
 app.get('/locales', (req, res) => {
+  console.log('[GET /locales] Petición recibida');
   pool.query(
     `SELECT 
       l.id, 
@@ -1406,8 +1485,12 @@ app.get('/locales', (req, res) => {
     FROM locales l
     LEFT JOIN solicitudes s ON l.solicitud_id = s.id`,
     (err, results) => {
-      if (err) return res.status(500).json({ error: err });
-      res.json(results);
+      if (err) {
+        console.error('[GET /locales] Error:', err);
+        return res.status(500).json({ error: err.message || 'Error de base de datos' });
+      }
+      console.log(`[GET /locales] ✅ ${results.length} locales encontrados`);
+      res.json(results || []);
     }
   );
 });
@@ -1503,7 +1586,7 @@ app.get('/api/informe/:id', (req, res) => {
             return {
               ...foto,
               cumple: cumpleNormalizado,
-              imagen_url: foto.imagen_url ? `http://localhost:3000${foto.imagen_url}` : null
+              imagen_url: foto.imagen_url ? `${BASE_URL}${foto.imagen_url}` : null
             };
           });
           
@@ -1556,7 +1639,7 @@ app.get('/api/panel-fotografico/:solicitudId', (req, res) => {
         return {
           ...foto,
           cumple: cumpleNormalizado,
-          imagen_url: foto.imagen_url ? `http://localhost:3000${foto.imagen_url}` : null
+          imagen_url: foto.imagen_url ? `${BASE_URL}${foto.imagen_url}` : null
         };
       });
       
@@ -1767,7 +1850,7 @@ app.post('/api/perfil/:id/foto', upload.single('foto'), (req, res) => {
   }
   
   const fotoUrl = `/uploads/${req.file.filename}`;
-  const fotoUrlCompleta = `http://localhost:3000${fotoUrl}`;
+  const fotoUrlCompleta = `${BASE_URL}${fotoUrl}`;
   
   pool.query(
     `UPDATE usuarios SET foto_perfil = ?, actualizado_en = CURRENT_TIMESTAMP WHERE id = ?`,
@@ -1866,7 +1949,7 @@ app.get('/api/perfil/:id/foto', (req, res) => {
     
     let fotoUrlCompleta = fotoUrl;
     if (fotoUrl && !fotoUrl.startsWith('http') && !fotoUrl.startsWith('data:')) {
-      fotoUrlCompleta = `http://localhost:3000${fotoUrl}`;
+      fotoUrlCompleta = `${BASE_URL}${fotoUrl}`;
     }
     
     console.log('[GET foto] URL original:', fotoUrl);
@@ -3003,7 +3086,7 @@ app.get('/api/fiscalizaciones/:id/evidencias', (req, res) => {
     // Agregar URL completa a las rutas
     const evidencias = results.map(e => ({
       ...e,
-      ruta_archivo: `http://localhost:3000${e.ruta_archivo}`
+      ruta_archivo: `${BASE_URL}${e.ruta_archivo}`
     }));
     
     console.log(`[Evidencias] ✅ ${evidencias.length} evidencias encontradas para fiscalización ${fiscalizacionId}`);
@@ -3316,7 +3399,10 @@ app.get('/api/notificaciones', (req, res) => {
   const usuarioId = req.query.usuario_id;
   const rol = req.query.rol;
 
+  console.log('[GET /api/notificaciones] Petición recibida:', { usuarioId, rol });
+
   if (!rol) {
+    console.warn('[GET /api/notificaciones] ⚠️ Rol no proporcionado');
     return res.status(400).json({ error: 'Rol requerido' });
   }
 
@@ -3331,10 +3417,11 @@ app.get('/api/notificaciones', (req, res) => {
 
   pool.query(query, [rol, usuarioId || null], (err, results) => {
     if (err) {
-      console.error('Error al obtener notificaciones:', err);
+      console.error('[GET /api/notificaciones] ❌ Error:', err);
       return res.status(500).json({ error: err.message });
     }
-    res.json(results);
+    console.log(`[GET /api/notificaciones] ✅ ${results.length} notificaciones encontradas`);
+    res.json(results || []);
   });
 });
 
@@ -3606,13 +3693,129 @@ function verificarTablas() {
   });
 }
 
+// ====== FUNCIÓN PARA INICIAR EL SERVIDOR DE PREDICCIÓN DE PYTHON ======
+function iniciarServidorPrediccion() {
+  const pythonScript = path.join(__dirname, 'backend_predict.py');
+  
+  // Verificar que el archivo existe
+  if (!fs.existsSync(pythonScript)) {
+    console.warn('⚠️  No se encontró backend_predict.py. El servicio de predicción no se iniciará.');
+    return null;
+  }
+
+  console.log('🐍 Iniciando servidor de predicción de riesgo (Python)...');
+  
+  // Detectar el comando de Python (python o py en Windows)
+  const pythonCmd = process.platform === 'win32' ? 'py' : 'python';
+  
+  // Ejecutar el script de Python
+  const pythonProcess = spawn(pythonCmd, [pythonScript], {
+    cwd: __dirname,
+    stdio: ['ignore', 'pipe', 'pipe'], // Ignorar stdin, capturar stdout y stderr
+    shell: true // Usar shell en Windows para mejor compatibilidad
+  });
+
+  let pythonIniciado = false;
+
+  // Capturar salida estándar
+  pythonProcess.stdout.on('data', (data) => {
+    const output = data.toString().trim();
+    if (output) {
+      console.log(`[Python Predict] ${output}`);
+      // Detectar cuando Flask inicia
+      if (output.includes('Running on') || output.includes('servidor Flask')) {
+        pythonIniciado = true;
+        console.log('✅ Servidor de predicción de riesgo iniciado correctamente');
+        console.log('   📡 Endpoint: http://localhost:5000/predict_riesgo');
+      }
+    }
+  });
+
+  // Capturar errores
+  pythonProcess.stderr.on('data', (data) => {
+    const error = data.toString().trim();
+    // Filtrar errores de encoding de Windows y warnings comunes
+    if (error && 
+        !error.includes('WARNING') && 
+        !error.includes('DeprecationWarning') &&
+        !error.includes('UnicodeEncodeError') &&
+        !error.includes('charmap') &&
+        !error.includes('codec can\'t encode')) {
+      console.error(`[Python Predict Error] ${error}`);
+    }
+  });
+
+  // Manejar cuando el proceso termina
+  pythonProcess.on('close', (code) => {
+    if (code !== 0 && code !== null) {
+      console.error(`❌ Servidor de predicción terminó con código ${code}`);
+      console.log('💡 Verifica que Python y las dependencias estén instaladas:');
+      console.log('   pip install flask flask-cors pandas scikit-learn joblib');
+    } else {
+      console.log('✅ Servidor de predicción detenido correctamente');
+    }
+  });
+
+  // Manejar errores de spawn
+  pythonProcess.on('error', (err) => {
+    console.error('❌ Error al iniciar servidor de predicción:', err.message);
+    if (err.message.includes('spawn')) {
+      console.log('💡 Python no encontrado. Opciones:');
+      console.log('   1. Verifica que Python esté instalado: python --version o py --version');
+      console.log('   2. En Windows, intenta: py backend_predict.py');
+      console.log('   3. Instala Python desde https://www.python.org/');
+      console.log('   4. Instala dependencias: pip install flask flask-cors pandas scikit-learn joblib');
+    }
+  });
+
+  // Verificar después de 3 segundos si se inició
+  setTimeout(() => {
+    if (!pythonProcess.killed && !pythonIniciado) {
+      // Verificar si el proceso sigue vivo
+      try {
+        process.kill(pythonProcess.pid, 0); // No mata el proceso, solo verifica
+        console.log('✅ Servidor de predicción de riesgo iniciado en puerto 5000');
+        console.log('   📡 Endpoint: http://localhost:5000/predict_riesgo');
+      } catch (e) {
+        console.warn('⚠️  No se pudo verificar el estado del servidor de predicción');
+      }
+    }
+  }, 3000);
+
+  return pythonProcess;
+}
+
 const PORT = 3000;
 app.listen(PORT, () => {
-  console.log('✅ Backend corriendo en http://localhost:3000');
+  console.log('========================================');
+  console.log('✅ Backend Node.js corriendo en http://localhost:3000');
   console.log('📅 Fecha:', new Date().toISOString());
   console.log('👤 Usuario: reynanela68-rgb');
   console.log('📂 Carpeta uploads:', path.join(__dirname, 'uploads'));
+  console.log('========================================');
   
   // Verificar tablas al iniciar
   verificarTablas();
+  
+  // Iniciar servidor de predicción de Python
+  const pythonProcess = iniciarServidorPrediccion();
+  
+  // Manejar cierre del proceso Node.js para también cerrar Python
+  process.on('SIGINT', () => {
+    console.log('\n🛑 Cerrando servidores...');
+    if (pythonProcess && !pythonProcess.killed) {
+      pythonProcess.kill();
+      console.log('✅ Servidor de predicción detenido');
+    }
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', () => {
+    console.log('\n🛑 Cerrando servidores...');
+    if (pythonProcess && !pythonProcess.killed) {
+      pythonProcess.kill();
+      console.log('✅ Servidor de predicción detenido');
+    }
+    process.exit(0);
+  });
 });

@@ -2,11 +2,34 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pandas as pd
 import joblib
+import sys
+import io
+
+# Configurar encoding para Windows
+if sys.platform == 'win32':
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 app = Flask(__name__)
-CORS(app) 
+# Configurar CORS para permitir ngrok y GitHub Pages
+CORS(app, origins=[
+    'https://gestisechuanchaco-glitch.github.io',
+    'https://touchedly-unbegrudged-natividad.ngrok-free.dev',
+    'http://localhost:4200',
+    'http://localhost:3000'
+])
 
-modelo = joblib.load("modelo_riesgo.pkl")
+# Mensaje de inicio (sin emojis para compatibilidad con Windows)
+print("=" * 50)
+print("SERVIDOR DE PREDICCION DE RIESGO (Python)")
+print("=" * 50)
+
+try:
+    modelo = joblib.load("modelo_riesgo.pkl")
+    print("[OK] Modelo de riesgo cargado correctamente")
+except Exception as e:
+    print(f"[ERROR] Error al cargar modelo: {e}")
+    sys.exit(1)
 
 @app.route('/predict_riesgo', methods=['POST'])
 def predict_riesgo():
@@ -37,4 +60,7 @@ def predict_riesgo():
     })
 
 if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+    print("[INICIO] Iniciando servidor Flask en puerto 5000...")
+    print("[INFO] Endpoint disponible: http://localhost:5000/predict_riesgo")
+    print("=" * 50)
+    app.run(port=5000, debug=False, use_reloader=False)
