@@ -674,7 +674,10 @@ export class FiscalizacionComponent implements OnInit {
 
     // Nueva API de SUNAT
     const url = `${this.apiCodartBase}/sunat/ruc/${ruc}`;
-    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    const headers = { 
+      'Authorization': `Bearer ${this.tokenCodart}`,
+      'Content-Type': 'application/json'
+    };
     
     this.logger.log('[consultarSunatPorRuc] Consultando:', ruc);
     

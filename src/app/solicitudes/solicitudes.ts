@@ -437,7 +437,10 @@ export class SolicitudesComponent implements AfterViewInit {
     
     // Nueva API de RENIEC
     const url = `${this.apiCodartBase}/reniec/dni/${this.dni_ce}`;
-    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    const headers = { 
+      'Authorization': `Bearer ${this.tokenCodart}`,
+      'Content-Type': 'application/json'
+    };
     
     this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {
@@ -485,7 +488,10 @@ export class SolicitudesComponent implements AfterViewInit {
     
     // Nueva API de SUNAT
     const url = `${this.apiCodartBase}/sunat/ruc/${this.ruc}`;
-    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    const headers = { 
+      'Authorization': `Bearer ${this.tokenCodart}`,
+      'Content-Type': 'application/json'
+    };
     
     this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {

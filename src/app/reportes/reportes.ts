@@ -400,7 +400,10 @@ export class ReportesComponent implements OnInit {
     
     // Nueva API de RENIEC
     const url = `${this.apiCodartBase}/reniec/dni/${dni}`;
-    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    const headers = { 
+      'Authorization': `Bearer ${this.tokenCodart}`,
+      'Content-Type': 'application/json'
+    };
     
     this.logger.log('[buscarDni] url:', url);
     this.http.get<any>(url, { headers }).subscribe({
@@ -449,7 +452,10 @@ export class ReportesComponent implements OnInit {
     
     // Nueva API de SUNAT
     const url = `${this.apiCodartBase}/sunat/ruc/${ruc}`;
-    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    const headers = { 
+      'Authorization': `Bearer ${this.tokenCodart}`,
+      'Content-Type': 'application/json'
+    };
     
     this.logger.log('[buscarRuc] url:', url);
     this.http.get<any>(url, { headers }).subscribe({
