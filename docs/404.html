@@ -1,27 +1,7 @@
-﻿<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <title>GESTISEC - Redirigiendo...</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <script>
-    var path = window.location.pathname;
-    var search = window.location.search;
-    var route = path.replace(/^\//, '').replace(/\/$/, '');
-    if (route === '404.html' || route === '' || route === 'index.html') {
-      window.location.replace('/index.html' + search);
-    } else {
-      var newUrl = '/index.html' + search;
-      sessionStorage.setItem('redirectPath', '/' + route);
-      window.location.replace(newUrl);
-    }
-  </script>
-</head>
-<body>
-  <noscript>
-    <p>Redirigiendo...</p>
-    <p>Si no eres redirigido automaticamente, <a href="/index.html">haz clic aqui</a>.</p>
-  </noscript>
-</body>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="0; url='/'">
+  </head>
 </html>
+
