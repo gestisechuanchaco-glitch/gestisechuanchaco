@@ -102,6 +102,11 @@ export class FiscalizacionComponent implements OnInit {
   inspectores: any[] = [];
 
   // API de SUNAT
+  // Nueva API de RENIEC y SUNAT
+  private tokenCodart = 'LjdZV09v9zcxuPxjg0ATLE4oL72HOmROCpPsrVF0u5qU4OFJ3OLYBIR8DF5B';
+  private apiCodartBase = 'https://api.codart.cgrt.net/api/v1/consultas';
+  
+  // API antigua (mantener como fallback)
   private tokenApisPeru = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImFudG9uaWFob3JuYTZAZ21haWwuY29tIn0.eICLNsCmEB8CYuJ-6kvnabVno6LL8ah5q0RofZi-Wbw';
   
   // Selector de Locales Existentes
@@ -667,23 +672,36 @@ export class FiscalizacionComponent implements OnInit {
       return;
     }
 
-    const url = `https://dniruc.apisperu.com/api/v1/ruc/${ruc}?token=${this.tokenApisPeru}`;
+    // Nueva API de SUNAT
+    const url = `${this.apiCodartBase}/sunat/ruc/${ruc}`;
+    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    
     this.logger.log('[consultarSunatPorRuc] Consultando:', ruc);
     
-    this.http.get<any>(url).subscribe({
+    this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {
         this.logger.log('[consultarSunatPorRuc] Respuesta:', resp);
         
+        // Mapear respuesta de la nueva API
+        let razonSocial = resp.razonSocial || resp.razon_social || resp.razonSocial || '';
+        let direccion = resp.direccion || resp.direccionCompleta || resp.direccion_completa || '';
+        
+        // Si viene en un formato diferente
+        if (resp.data) {
+          razonSocial = resp.data.razonSocial || resp.data.razon_social || resp.data.razonSocial || '';
+          direccion = resp.data.direccion || resp.data.direccionCompleta || resp.data.direccion_completa || '';
+        }
+        
         if (this.mostrarModalCrear) {
           // Estamos en el modal de crear
-          if (resp.razonSocial) this.nuevaFiscalizacion.razon_social = resp.razonSocial;
-          if (resp.direccion) this.nuevaFiscalizacion.direccion = resp.direccion;
-          alert(`✓ Datos encontrados:\n${resp.razonSocial || ''}`);
+          if (razonSocial) this.nuevaFiscalizacion.razon_social = razonSocial;
+          if (direccion) this.nuevaFiscalizacion.direccion = direccion;
+          alert(`✓ Datos encontrados:\n${razonSocial || ''}`);
         } else if (this.mostrarModalEditar && this.fiscalizacionSeleccionada) {
           // Estamos en el modal de editar
-          if (resp.razonSocial) this.fiscalizacionSeleccionada.razon_social = resp.razonSocial;
-          if (resp.direccion) this.fiscalizacionSeleccionada.direccion = resp.direccion;
-          alert(`✓ Datos encontrados:\n${resp.razonSocial || ''}`);
+          if (razonSocial) this.fiscalizacionSeleccionada.razon_social = razonSocial;
+          if (direccion) this.fiscalizacionSeleccionada.direccion = direccion;
+          alert(`✓ Datos encontrados:\n${razonSocial || ''}`);
         }
       },
       error: (error) => {

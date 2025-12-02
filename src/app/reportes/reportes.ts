@@ -240,6 +240,11 @@ export class ReportesComponent implements OnInit {
     { key: 'whatsapp_numero_alt', label: 'WhatsApp Número Alterno' }
   ];
 
+  // Nueva API de RENIEC y SUNAT
+  private tokenCodart = 'LjdZV09v9zcxuPxjg0ATLE4oL72HOmROCpPsrVF0u5qU4OFJ3OLYBIR8DF5B';
+  private apiCodartBase = 'https://api.codart.cgrt.net/api/v1/consultas';
+  
+  // API antigua (mantener como fallback)
   private tokenApisPeru = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6ImFudG9uaWFob3JuYTZAZ21haWwuY29tIn0.eICLNsCmEB8CYuJ-6kvnabVno6LL8ah5q0RofZi-Wbw';
   seleccionarTodos = false;
 
@@ -392,9 +397,13 @@ export class ReportesComponent implements OnInit {
       Swal.fire('Error', 'Ingrese un DNI válido de 8 dígitos', 'error');
       return;
     }
-    const url = `https://dniruc.apisperu.com/api/v1/dni/${dni}?token=${this.tokenApisPeru}`;
+    
+    // Nueva API de RENIEC
+    const url = `${this.apiCodartBase}/reniec/dni/${dni}`;
+    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    
     this.logger.log('[buscarDni] url:', url);
-    this.http.get<any>(url).subscribe({
+    this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {
         if (resp.error || resp.message) {
           console.warn('[buscarDni] respuesta con error:', resp);
@@ -402,8 +411,23 @@ export class ReportesComponent implements OnInit {
           this.editForm.nombres_apellidos = '';
           return;
         }
-        if (resp.nombres && resp.apellidoPaterno && resp.apellidoMaterno) {
-          this.editForm.nombres_apellidos = `${resp.nombres} ${resp.apellidoPaterno} ${resp.apellidoMaterno}`;
+        
+        // Mapear respuesta de la nueva API
+        let nombres = resp.nombres || resp.nombre || resp.nombres_completos || '';
+        let apellidoPaterno = resp.apellidoPaterno || resp.apellido_paterno || resp.paterno || '';
+        let apellidoMaterno = resp.apellidoMaterno || resp.apellido_materno || resp.materno || '';
+        
+        // Si viene en un formato diferente
+        if (resp.data) {
+          nombres = resp.data.nombres || resp.data.nombre || '';
+          apellidoPaterno = resp.data.apellidoPaterno || resp.data.apellido_paterno || resp.data.paterno || '';
+          apellidoMaterno = resp.data.apellidoMaterno || resp.data.apellido_materno || resp.data.materno || '';
+        }
+        
+        if (nombres && apellidoPaterno && apellidoMaterno) {
+          this.editForm.nombres_apellidos = `${nombres} ${apellidoPaterno} ${apellidoMaterno}`;
+        } else if (resp.nombreCompleto || resp.nombre_completo) {
+          this.editForm.nombres_apellidos = resp.nombreCompleto || resp.nombre_completo;
         } else {
           Swal.fire('Advertencia', 'No se encontraron datos para ese DNI', 'warning');
           this.editForm.nombres_apellidos = '';
@@ -422,15 +446,30 @@ export class ReportesComponent implements OnInit {
       Swal.fire('Error', 'Ingrese un RUC válido de 11 dígitos', 'error');
       return;
     }
-    const url = `https://dniruc.apisperu.com/api/v1/ruc/${ruc}?token=${this.tokenApisPeru}`;
+    
+    // Nueva API de SUNAT
+    const url = `${this.apiCodartBase}/sunat/ruc/${ruc}`;
+    const headers = { 'Authorization': `Bearer ${this.tokenCodart}` };
+    
     this.logger.log('[buscarRuc] url:', url);
-    this.http.get<any>(url).subscribe({
+    this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {
-        if (resp.razonSocial) this.editForm.razon_social = resp.razonSocial;
-        if (resp.nombreComercial) this.editForm.nombre_comercial = resp.nombreComercial;
-        else if (resp.nombre_comercial) this.editForm.nombre_comercial = resp.nombre_comercial;
+        // Mapear respuesta de la nueva API
+        let razonSocial = resp.razonSocial || resp.razon_social || resp.razonSocial || '';
+        let nombreComercial = resp.nombreComercial || resp.nombre_comercial || resp.nombreComercial || '';
+        let direccion = resp.direccion || resp.direccionCompleta || resp.direccion_completa || '';
+        
+        // Si viene en un formato diferente
+        if (resp.data) {
+          razonSocial = resp.data.razonSocial || resp.data.razon_social || resp.data.razonSocial || '';
+          nombreComercial = resp.data.nombreComercial || resp.data.nombre_comercial || resp.data.nombreComercial || '';
+          direccion = resp.data.direccion || resp.data.direccionCompleta || resp.data.direccion_completa || '';
+        }
+        
+        if (razonSocial) this.editForm.razon_social = razonSocial;
+        if (nombreComercial) this.editForm.nombre_comercial = nombreComercial;
         else this.editForm.nombre_comercial = '';
-        if (resp.direccion) this.editForm.direccion = resp.direccion;
+        if (direccion) this.editForm.direccion = direccion;
       },
       error: (e) => {
         this.logger.error('[buscarRuc] ERROR:', e);
