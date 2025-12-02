@@ -444,31 +444,51 @@ export class SolicitudesComponent implements AfterViewInit {
     
     this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {
-        // Mapear respuesta de la nueva API
-        if (resp.error || resp.message) {
+        console.log('[consultarReniecPorDni] Respuesta completa de la API:', resp);
+        
+        // Verificar si hay error en la respuesta
+        if (resp.error || (resp.message && resp.message.toLowerCase().includes('error'))) {
           alert('La API devolvió un error: ' + (resp.message || resp.error));
           this.nombres_apellidos = '';
           return;
         }
         
         // Intentar diferentes formatos de respuesta
-        let nombres = resp.nombres || resp.nombre || resp.nombres_completos || '';
-        let apellidoPaterno = resp.apellidoPaterno || resp.apellido_paterno || resp.paterno || '';
-        let apellidoMaterno = resp.apellidoMaterno || resp.apellido_materno || resp.materno || '';
+        let nombres = '';
+        let apellidoPaterno = '';
+        let apellidoMaterno = '';
+        let nombreCompleto = '';
         
-        // Si viene en un formato diferente
+        // Si viene dentro de un objeto data
         if (resp.data) {
-          nombres = resp.data.nombres || resp.data.nombre || '';
-          apellidoPaterno = resp.data.apellidoPaterno || resp.data.apellido_paterno || resp.data.paterno || '';
-          apellidoMaterno = resp.data.apellidoMaterno || resp.data.apellido_materno || resp.data.materno || '';
+          nombres = resp.data.nombres || resp.data.nombre || resp.data.nombres_completos || '';
+          apellidoPaterno = resp.data.apellidoPaterno || resp.data.apellido_paterno || resp.data.paterno || resp.data.apellido_paterno || '';
+          apellidoMaterno = resp.data.apellidoMaterno || resp.data.apellido_materno || resp.data.materno || resp.data.apellido_materno || '';
+          nombreCompleto = resp.data.nombreCompleto || resp.data.nombre_completo || resp.data.nombreCompleto || '';
+        } else {
+          // Buscar directamente en la respuesta
+          nombres = resp.nombres || resp.nombre || resp.nombres_completos || resp.primerNombre || '';
+          apellidoPaterno = resp.apellidoPaterno || resp.apellido_paterno || resp.paterno || resp.apellidoPaterno || resp.primerApellido || '';
+          apellidoMaterno = resp.apellidoMaterno || resp.apellido_materno || resp.materno || resp.apellidoMaterno || resp.segundoApellido || '';
+          nombreCompleto = resp.nombreCompleto || resp.nombre_completo || resp.nombreCompleto || resp.nombre || '';
         }
         
+        console.log('[consultarReniecPorDni] Datos extraídos:', { nombres, apellidoPaterno, apellidoMaterno, nombreCompleto });
+        
+        // Construir nombre completo
         if (nombres && apellidoPaterno && apellidoMaterno) {
-          this.nombres_apellidos = `${nombres} ${apellidoPaterno} ${apellidoMaterno}`;
-        } else if (resp.nombreCompleto || resp.nombre_completo) {
-          this.nombres_apellidos = resp.nombreCompleto || resp.nombre_completo;
+          this.nombres_apellidos = `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.trim();
+        } else if (nombres && apellidoPaterno) {
+          // Si solo hay nombres y apellido paterno
+          this.nombres_apellidos = `${nombres} ${apellidoPaterno}`.trim();
+        } else if (nombreCompleto) {
+          this.nombres_apellidos = nombreCompleto.trim();
+        } else if (resp.nombre || resp.nombres) {
+          // Último intento: usar cualquier campo que tenga nombre
+          this.nombres_apellidos = (resp.nombre || resp.nombres || '').trim();
         } else {
-          alert('No se encontraron datos para ese DNI');
+          console.warn('[consultarReniecPorDni] No se encontraron campos de nombre en la respuesta');
+          alert('No se encontraron datos para ese DNI. Verifica que el DNI sea correcto.');
           this.nombres_apellidos = '';
         }
       },
