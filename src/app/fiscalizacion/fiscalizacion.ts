@@ -683,17 +683,27 @@ export class FiscalizacionComponent implements OnInit {
     
     this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {
-        this.logger.log('[consultarSunatPorRuc] Respuesta:', resp);
+        this.logger.log('[consultarSunatPorRuc] Respuesta completa de la API:', resp);
         
-        // Mapear respuesta de la nueva API
-        let razonSocial = resp.razonSocial || resp.razon_social || resp.razonSocial || '';
-        let direccion = resp.direccion || resp.direccionCompleta || resp.direccion_completa || '';
-        
-        // Si viene en un formato diferente
-        if (resp.data) {
-          razonSocial = resp.data.razonSocial || resp.data.razon_social || resp.data.razonSocial || '';
-          direccion = resp.data.direccion || resp.data.direccionCompleta || resp.data.direccion_completa || '';
+        // Verificar si hay error en la respuesta
+        if (!resp.success || resp.error || (resp.message && resp.message.toLowerCase().includes('error'))) {
+          alert('La API devolvió un error: ' + (resp.message || resp.error || 'RUC no encontrado'));
+          return;
         }
+        
+        // La API de Codart devuelve los datos en resp.result
+        const result = resp.result;
+        if (!result) {
+          this.logger.warn('[consultarSunatPorRuc] No hay objeto result en la respuesta');
+          alert('No se encontraron datos para ese RUC. Verifica que el RUC sea correcto.');
+          return;
+        }
+        
+        // Mapear campos según la documentación de la API Codart
+        const razonSocial = result.razon_social || '';
+        const direccion = result.direccion || '';
+        
+        this.logger.log('[consultarSunatPorRuc] Datos extraídos:', { razonSocial, direccion });
         
         if (this.mostrarModalCrear) {
           // Estamos en el modal de crear

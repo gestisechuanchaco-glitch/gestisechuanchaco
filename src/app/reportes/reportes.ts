@@ -410,48 +410,44 @@ export class ReportesComponent implements OnInit {
       next: (resp) => {
         this.logger.log('[buscarDni] Respuesta completa de la API:', resp);
         
-        if (resp.error || (resp.message && resp.message.toLowerCase().includes('error'))) {
+        // Verificar si hay error en la respuesta
+        if (!resp.success || resp.error || (resp.message && resp.message.toLowerCase().includes('error'))) {
           console.warn('[buscarDni] respuesta con error:', resp);
-          Swal.fire('Error', 'La API devolvió un error: ' + (resp.message || resp.error), 'error');
+          Swal.fire('Error', 'La API devolvió un error: ' + (resp.message || resp.error || 'DNI no encontrado'), 'error');
           this.editForm.nombres_apellidos = '';
           return;
         }
         
-        // Intentar diferentes formatos de respuesta
-        let nombres = '';
-        let apellidoPaterno = '';
-        let apellidoMaterno = '';
-        let nombreCompleto = '';
-        
-        // Si viene dentro de un objeto data
-        if (resp.data) {
-          nombres = resp.data.nombres || resp.data.nombre || resp.data.nombres_completos || '';
-          apellidoPaterno = resp.data.apellidoPaterno || resp.data.apellido_paterno || resp.data.paterno || resp.data.apellido_paterno || '';
-          apellidoMaterno = resp.data.apellidoMaterno || resp.data.apellido_materno || resp.data.materno || resp.data.apellido_materno || '';
-          nombreCompleto = resp.data.nombreCompleto || resp.data.nombre_completo || resp.data.nombreCompleto || '';
-        } else {
-          // Buscar directamente en la respuesta
-          nombres = resp.nombres || resp.nombre || resp.nombres_completos || resp.primerNombre || '';
-          apellidoPaterno = resp.apellidoPaterno || resp.apellido_paterno || resp.paterno || resp.apellidoPaterno || resp.primerApellido || '';
-          apellidoMaterno = resp.apellidoMaterno || resp.apellido_materno || resp.materno || resp.apellidoMaterno || resp.segundoApellido || '';
-          nombreCompleto = resp.nombreCompleto || resp.nombre_completo || resp.nombreCompleto || resp.nombre || '';
+        // La API de Codart devuelve los datos en resp.result
+        const result = resp.result;
+        if (!result) {
+          this.logger.warn('[buscarDni] No hay objeto result en la respuesta');
+          Swal.fire('Advertencia', 'No se encontraron datos para ese DNI. Verifica que el DNI sea correcto.', 'warning');
+          this.editForm.nombres_apellidos = '';
+          return;
         }
+        
+        // Mapear campos según la documentación de la API Codart
+        // first_name, first_last_name, second_last_name, full_name
+        const nombres = result.first_name || '';
+        const apellidoPaterno = result.first_last_name || '';
+        const apellidoMaterno = result.second_last_name || '';
+        const nombreCompleto = result.full_name || '';
         
         this.logger.log('[buscarDni] Datos extraídos:', { nombres, apellidoPaterno, apellidoMaterno, nombreCompleto });
         
         // Construir nombre completo
-        if (nombres && apellidoPaterno && apellidoMaterno) {
+        if (nombreCompleto) {
+          // Usar full_name si está disponible
+          this.editForm.nombres_apellidos = nombreCompleto.trim();
+        } else if (nombres && apellidoPaterno && apellidoMaterno) {
+          // Construir desde los campos individuales
           this.editForm.nombres_apellidos = `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.trim();
         } else if (nombres && apellidoPaterno) {
           // Si solo hay nombres y apellido paterno
           this.editForm.nombres_apellidos = `${nombres} ${apellidoPaterno}`.trim();
-        } else if (nombreCompleto) {
-          this.editForm.nombres_apellidos = nombreCompleto.trim();
-        } else if (resp.nombre || resp.nombres) {
-          // Último intento: usar cualquier campo que tenga nombre
-          this.editForm.nombres_apellidos = (resp.nombre || resp.nombres || '').trim();
         } else {
-          this.logger.warn('[buscarDni] No se encontraron campos de nombre en la respuesta');
+          this.logger.warn('[buscarDni] No se encontraron campos de nombre en result');
           Swal.fire('Advertencia', 'No se encontraron datos para ese DNI. Verifica que el DNI sea correcto.', 'warning');
           this.editForm.nombres_apellidos = '';
         }
@@ -480,22 +476,49 @@ export class ReportesComponent implements OnInit {
     this.logger.log('[buscarRuc] url:', url);
     this.http.get<any>(url, { headers }).subscribe({
       next: (resp) => {
-        // Mapear respuesta de la nueva API
-        let razonSocial = resp.razonSocial || resp.razon_social || resp.razonSocial || '';
-        let nombreComercial = resp.nombreComercial || resp.nombre_comercial || resp.nombreComercial || '';
-        let direccion = resp.direccion || resp.direccionCompleta || resp.direccion_completa || '';
+        this.logger.log('[buscarRuc] Respuesta completa de la API:', resp);
         
-        // Si viene en un formato diferente
-        if (resp.data) {
-          razonSocial = resp.data.razonSocial || resp.data.razon_social || resp.data.razonSocial || '';
-          nombreComercial = resp.data.nombreComercial || resp.data.nombre_comercial || resp.data.nombreComercial || '';
-          direccion = resp.data.direccion || resp.data.direccionCompleta || resp.data.direccion_completa || '';
+        // Verificar si hay error en la respuesta
+        if (!resp.success || resp.error || (resp.message && resp.message.toLowerCase().includes('error'))) {
+          Swal.fire('Error', 'La API devolvió un error: ' + (resp.message || resp.error || 'RUC no encontrado'), 'error');
+          this.editForm.razon_social = '';
+          this.editForm.nombre_comercial = '';
+          this.editForm.direccion = '';
+          return;
         }
         
-        if (razonSocial) this.editForm.razon_social = razonSocial;
-        if (nombreComercial) this.editForm.nombre_comercial = nombreComercial;
-        else this.editForm.nombre_comercial = '';
-        if (direccion) this.editForm.direccion = direccion;
+        // La API de Codart devuelve los datos en resp.result
+        const result = resp.result;
+        if (!result) {
+          this.logger.warn('[buscarRuc] No hay objeto result en la respuesta');
+          Swal.fire('Advertencia', 'No se encontraron datos para ese RUC. Verifica que el RUC sea correcto.', 'warning');
+          this.editForm.razon_social = '';
+          this.editForm.nombre_comercial = '';
+          this.editForm.direccion = '';
+          return;
+        }
+        
+        // Mapear campos según la documentación de la API Codart
+        const razonSocial = result.razon_social || '';
+        const direccion = result.direccion || '';
+        // Nota: La API de Codart para RUC no parece tener nombre_comercial en el ejemplo
+        
+        this.logger.log('[buscarRuc] Datos extraídos:', { razonSocial, direccion });
+        
+        if (razonSocial) {
+          this.editForm.razon_social = razonSocial;
+        } else {
+          this.editForm.razon_social = '';
+        }
+        
+        // nombre_comercial no está en la respuesta de la API, dejarlo vacío
+        this.editForm.nombre_comercial = '';
+        
+        if (direccion) {
+          this.editForm.direccion = direccion;
+        } else {
+          this.editForm.direccion = '';
+        }
       },
       error: (e) => {
         this.logger.error('[buscarRuc] ERROR:', e);
