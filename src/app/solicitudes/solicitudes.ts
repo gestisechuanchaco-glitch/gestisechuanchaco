@@ -597,7 +597,7 @@ export class SolicitudesComponent implements AfterViewInit {
         antiguedad_actividad: this.antiguedadActividad
       };
 
-      this.http.post<any>('http://localhost:5000/predict_riesgo', body)
+      this.http.post<any>(`${environment.predictApiUrl}/predict/predict_riesgo`, body)
         .subscribe(resp => {
           this.nivelRiesgoPredicho = resp.nivel_riesgo;
           this.confiabilidad_ml = resp.confiabilidad_ml;
