@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { MlService } from '../service/mi.service';
 import { HttpClient } from '@angular/common/http';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 import * as XLSX from 'xlsx';
 
 @Component({
@@ -414,7 +415,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   cargarTiempoPromedioRegistro() {
-    this.http.get<any>('http://localhost:3000/api/tiempo-promedio-registro').subscribe(resp => {
+    this.http.get<any>(`${environment.apiUrl}/api/tiempo-promedio-registro`).subscribe(resp => {
       const segundos = resp.promedio_segundos ?? 0;
       this.tiempoPromedioRegistrosTexto = this.formatearSegundos(segundos);
     });
@@ -1048,7 +1049,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   cargarFiscalizaciones(): Promise<void> {
     return new Promise((resolve) => {
     // Cargar estadísticas
-    this.http.get<any>('http://localhost:3000/api/fiscalizaciones/estadisticas/dashboard')
+    this.http.get<any>(`${environment.apiUrl}/api/fiscalizaciones/estadisticas/dashboard`)
       .subscribe({
         next: (stats) => {
           this.fiscTotal = stats.total || 0;
@@ -1066,7 +1067,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
       });
     
     // Cargar lista de próximas reinspecciones
-    this.http.get<any[]>(`http://localhost:3000/api/fiscalizaciones/proximas-reinspeccion?dias=${this.fiscDiasAnticipacion}`)
+    this.http.get<any[]>(`${environment.apiUrl}/api/fiscalizaciones/proximas-reinspeccion?dias=${this.fiscDiasAnticipacion}`)
       .subscribe({
         next: (fiscalizaciones) => {
           this.fiscProximasLista = fiscalizaciones;
@@ -1452,7 +1453,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     );
 
     // Obtener fiscalizaciones con coordenadas
-    this.http.get<any[]>('http://localhost:3000/api/fiscalizaciones')
+    this.http.get<any[]>(`${environment.apiUrl}/api/fiscalizaciones`)
       .subscribe({
         next: (fiscalizaciones) => {
           const fiscConCoordenadas = (fiscalizaciones || []).filter((f: any) => 

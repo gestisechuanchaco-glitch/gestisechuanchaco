@@ -1088,7 +1088,7 @@
           <tr *ngFor="let foto of solicitudSeleccionada?.panelFotografico">
             <td>
               <img 
-                [src]="'http://localhost:3000'+foto.imagen_url" 
+                [src]="getArchivoUrl(foto)" 
                 alt="Foto" 
                 class="panel-foto"
               />

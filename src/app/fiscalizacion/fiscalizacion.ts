@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 
 interface Fiscalizacion {
   id: number;
@@ -60,7 +61,7 @@ interface Evidencia {
   styleUrls: ['./fiscalizacion.css']
 })
 export class FiscalizacionComponent implements OnInit {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = `${environment.apiUrl}/api`;
 
   fiscalizaciones: Fiscalizacion[] = [];
   fiscalizacionesFiltradas: Fiscalizacion[] = [];
@@ -708,7 +709,7 @@ export class FiscalizacionComponent implements OnInit {
   }
 
   cargarLocalesDisponibles() {
-    this.http.get<any[]>('http://localhost:3000/locales').subscribe({
+    this.http.get<any[]>(`${environment.apiUrl}/locales`).subscribe({
       next: (data) => {
         this.localesDisponibles = data;
         this.logger.log('Locales disponibles:', this.localesDisponibles.length);

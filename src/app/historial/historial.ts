@@ -3,6 +3,7 @@ import { MlService } from '../service/mi.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-historial-cambios',
@@ -156,5 +157,14 @@ export class HistorialComponent implements OnInit {
     this.showModalDetalle = false;
     this.solicitudSeleccionada = null;
     this.panelFotograficoVisible = false;
+  }
+
+  getArchivoUrl(archivo: any): string {
+    const baseUrl = environment.apiUrl;
+    let url = archivo.archivo_url || archivo.archivoUrl || archivo.url || '';
+    if (url && !url.startsWith('http')) {
+      url = baseUrl + url;
+    }
+    return url || '';
   }
 }

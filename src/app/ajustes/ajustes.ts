@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 
 interface Usuario {
   id: number;
@@ -35,7 +36,7 @@ interface Rol {
   styleUrls: ['./ajustes.css']
 })
 export class AjustesComponent implements OnInit {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = `${environment.apiUrl}/api`;
   
   usuarios: Usuario[] = [];
   roles: Rol[] = [];

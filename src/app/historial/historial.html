@@ -268,11 +268,11 @@
         <div class="detalle-archivos-grid">
           <div *ngFor="let archivo of solicitudSeleccionada.archivos" style="margin-bottom: 7px;">
             <ng-container [ngSwitch]="archivo.archivo_tipo">
-              <img *ngSwitchCase="'imagen'" [src]="'http://localhost:3000'+archivo.archivo_url" class="detalle-img-file" loading="lazy" alt="Imagen">
-              <a *ngSwitchCase="'pdf'" [href]="'http://localhost:3000'+archivo.archivo_url" target="_blank" class="archivo-link detalle-pdf-link">
+              <img *ngSwitchCase="'imagen'" [src]="getArchivoUrl(archivo)" class="detalle-img-file" loading="lazy" alt="Imagen">
+              <a *ngSwitchCase="'pdf'" [href]="getArchivoUrl(archivo)" target="_blank" class="archivo-link detalle-pdf-link">
                 <i class="fas fa-file-pdf"></i> Ver PDF
               </a>
-              <a *ngSwitchDefault [href]="'http://localhost:3000'+archivo.archivo_url" target="_blank" class="archivo-link">
+              <a *ngSwitchDefault [href]="getArchivoUrl(archivo)" target="_blank" class="archivo-link">
                 <i class="fas fa-file"></i> {{ archivo.archivo_nombre || 'Archivo' }}
               </a>
             </ng-container>

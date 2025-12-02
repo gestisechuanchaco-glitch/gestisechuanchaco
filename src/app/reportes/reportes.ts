@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import Swal from 'sweetalert2';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 import { jsPDF } from 'jspdf';
 
 // Documentos requeridos centralizados
@@ -725,7 +726,7 @@ export class ReportesComponent implements OnInit {
   }
 
   getArchivoUrl(archivo: any): string {
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = environment.apiUrl;
     
     let url = archivo.archivo_url || archivo.archivoUrl || archivo.url || '';
     

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-locales',
@@ -241,7 +242,7 @@ verDetalle(local: any): void {
 
   // ⭐ OBTENER URL DE ARCHIVO
   getArchivoUrl(archivo: any): string {
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = environment.apiUrl;
     
     let url = archivo.archivo_url || archivo.archivoUrl || archivo.url || '';
     

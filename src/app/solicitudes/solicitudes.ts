@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 
 declare var google: any;
 
@@ -353,7 +354,7 @@ export class SolicitudesComponent implements AfterViewInit {
     this.searchTimeout = setTimeout(() => {
       const query = this.busquedaRenovacion.trim().toLowerCase();
       
-      this.http.get<any[]>('http://localhost:3000/api/solicitudes').subscribe({
+      this.http.get<any[]>(`${environment.apiUrl}/api/solicitudes`).subscribe({
         next: (solicitudes) => {
           this.solicitudesEncontradas = solicitudes.filter(s => 
             (s.razon_social && s.razon_social.toLowerCase().includes(query)) ||
@@ -831,7 +832,7 @@ export class SolicitudesComponent implements AfterViewInit {
     });
 
     // Enviar al backend
-    this.http.post('http://localhost:3000/api/solicitud', formData).subscribe({
+    this.http.post(`${environment.apiUrl}/api/solicitud`, formData).subscribe({
       next: (response: any) => {
         if (response.success) {
           alert('Solicitud guardada exitosamente');

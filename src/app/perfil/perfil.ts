@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { LogService } from '../service/log.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-perfil',
@@ -13,7 +14,7 @@ import { LogService } from '../service/log.service';
 })
 export class PerfilComponent implements OnInit {
   
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = `${environment.apiUrl}/api`;
   usuarioId: number = 0;
   
   usuarioNombre: string = '';

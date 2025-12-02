@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { LogService } from '../service/log.service';
 import { MlService } from '../service/mi.service';
+import { environment } from '../../environments/environment';
 import { FullCalendarModule } from '@fullcalendar/angular';
 import { CalendarOptions, EventClickArg } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -42,7 +43,7 @@ interface CalendarioEvento {
   styleUrls: ['./calendario.css']
 })
 export class CalendarioComponent implements OnInit {
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = `${environment.apiUrl}/api`;
   
   eventos: CalendarioEvento[] = [];
   eventoSeleccionado: CalendarioEvento | null = null;

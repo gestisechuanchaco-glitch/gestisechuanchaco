@@ -3,6 +3,7 @@ import { HttpClient, HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, tap, retry, map } from 'rxjs/operators';
 import { LogService } from './log.service';
+import { environment } from '../../environments/environment';
 
 // ============================================
 // INTERFACES
@@ -48,7 +49,7 @@ export interface ApiResponse<T> {
 
 @Injectable({ providedIn: 'root' })
 export class MlService {
-  private apiUrl = 'http://localhost:3000';
+  private apiUrl = environment.apiUrl;
   
   // Estado de carga para mostrar loaders
   private loadingSubject = new BehaviorSubject<boolean>(false);

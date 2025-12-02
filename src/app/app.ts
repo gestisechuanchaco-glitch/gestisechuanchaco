@@ -7,6 +7,7 @@ import { Location } from '@angular/common';
 import { HttpClientModule, HttpClient } from '@angular/common/http';
 import { LogService } from './service/log.service';
 import { MlService } from './service/mi.service';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -39,7 +40,7 @@ export class App implements OnInit, OnDestroy {
   public eventoNotificacionPrincipal: any = null;
   private eventosAtendidos: Set<string> = new Set(); // IDs de eventos marcados como atendidos
   
-  private apiUrl = 'http://localhost:3000/api';
+  private apiUrl = `${environment.apiUrl}/api`;
   private pollingInterval: any = null;
   private eventosInterval: any = null;
 
