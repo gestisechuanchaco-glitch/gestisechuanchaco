@@ -21,8 +21,8 @@ if (-not (Test-Path $sourcePath)) {
         Write-Host "Moviendo archivos a docs/..." -ForegroundColor Yellow
         Write-Host ""
         
-        # Limpiar archivos antiguos en docs (excepto browser y .git)
-        Get-ChildItem -Path $targetPath -Exclude "browser", ".git" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+        # Limpiar archivos antiguos en docs (excepto browser, .git, CNAME, sitemap.xml y google*.html)
+        Get-ChildItem -Path $targetPath -Exclude "browser", ".git", "CNAME", "sitemap.xml" | Where-Object { $_.Name -notlike "google*.html" } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
         
         # Copiar todos los archivos de browser/ a docs/
         Get-ChildItem -Path $altSourcePath | ForEach-Object {
@@ -63,8 +63,8 @@ if (-not (Test-Path $sourcePath)) {
     Write-Host "Moviendo archivos a docs/..." -ForegroundColor Yellow
     Write-Host ""
     
-    # Limpiar archivos antiguos en docs (excepto browser y .git)
-    Get-ChildItem -Path $targetPath -Exclude "browser", ".git" | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    # Limpiar archivos antiguos en docs (excepto browser, .git, CNAME, sitemap.xml y google*.html)
+    Get-ChildItem -Path $targetPath -Exclude "browser", ".git", "CNAME", "sitemap.xml" | Where-Object { $_.Name -notlike "google*.html" } | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     
     # Copiar todos los archivos de browser/browser/ a docs/
     Get-ChildItem -Path $sourcePath | ForEach-Object {
