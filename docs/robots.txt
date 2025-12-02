@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+Disallow: /login
+Disallow: /dashboard
+Disallow: /inspecciones
+Disallow: /reportes
+Disallow: /fiscalizacion
+Disallow: /historial
+Disallow: /historial-inspecciones
+Disallow: /calendario
+Disallow: /ajustes
+Disallow: /app
+Disallow: /assets
+Disallow: /media
+Disallow: /backend
