@@ -23,7 +23,7 @@
   overflow: hidden;
   
   /* Fondo con imagen de Huanchaco */
-  background: url('/assets/huanchaco_logo.jpg') center center/cover no-repeat;
+  background: url('/gestisechuanchaco/assets/huanchaco_logo.jpg') center center/cover no-repeat;
   
   /* Fallback si no carga la imagen */
   background-color: #1a1a2e;
