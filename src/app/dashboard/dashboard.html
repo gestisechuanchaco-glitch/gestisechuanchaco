@@ -1,0 +1,861 @@
+<div class="dashboard-container">
+  
+  <!-- ✨ ALERTAS DE EVENTOS PRÓXIMOS ✨ -->
+  <div *ngIf="mostrarAlertasEventos && eventosProximos && eventosProximos.length > 0" 
+       class="alertas-proximos-dashboard"
+       [class.animar]="animacionActiva">
+    <div class="alertas-header-dashboard">
+      <div class="alertas-titulo-dashboard">
+        <i class="fas fa-bell"></i>
+        <span>Eventos Próximos</span>
+        <span class="badge-contador-dashboard">{{ eventosProximos.length }}</span>
+      </div>
+      <button class="btn-cerrar-alertas-dashboard" (click)="cerrarAlertasEventos()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="alertas-lista-dashboard">
+      <div *ngFor="let evento of eventosProximos; let i = index" 
+           class="alerta-item-dashboard" 
+           [class]="'alerta-' + obtenerClaseUrgencia(evento)"
+           [style.animation-delay]="i * 0.1 + 's'">
+        <div class="alerta-icono-dashboard">
+          <i class="fas" 
+             [class.fa-exclamation-circle]="obtenerClaseUrgencia(evento) === 'hoy'"
+             [class.fa-exclamation-triangle]="obtenerClaseUrgencia(evento) === 'mañana'"
+             [class.fa-info-circle]="obtenerClaseUrgencia(evento) === 'proximo'"
+             [class.fa-calendar-check]="obtenerClaseUrgencia(evento) === 'futuro'">
+          </i>
+        </div>
+        <div class="alerta-contenido-dashboard">
+          <div class="alerta-titulo-dashboard">{{ evento.title }}</div>
+          <div class="alerta-fecha-dashboard">
+            <i class="fas fa-clock"></i>
+            {{ formatearFechaCorta(evento.start) }}
+            <span class="alerta-urgente-badge-dashboard" [class]="'badge-' + obtenerClaseUrgencia(evento)">
+              {{ obtenerTextoUrgencia(evento) }}
+            </span>
+          </div>
+          <div *ngIf="evento.extendedProps?.direccion" class="alerta-detalle-dashboard">
+            <i class="fas fa-map-marker-alt"></i>
+            {{ evento.extendedProps.direccion }}
+          </div>
+        </div>
+        <div class="alerta-pulso-dashboard"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✨ PANEL DE ALERTAS ✨ -->
+  <div class="alertas-criticas" *ngIf="alertas.length > 0 && mostrarAlertas">
+    <div class="alertas-header">
+      <div class="alertas-title">
+        <i class="fas fa-bell"></i>
+        <h3>Alertas</h3>
+        <span class="badge-contador-alertas">{{ alertas.length }}</span>
+      </div>
+      <button class="btn-cerrar-alertas" (click)="cerrarAlertas()" title="Cerrar panel de alertas">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div class="alertas-grid">
+      <div *ngFor="let alerta of alertas" 
+           class="alerta-item" 
+           [class.alerta-error]="alerta.tipo === 'error'"
+           [class.alerta-warning]="alerta.tipo === 'warning'"
+           [class.alerta-info]="alerta.tipo === 'info'">
+        <div class="alerta-content">
+          <i class="fas" [ngClass]="alerta.icono"></i>
+          <span>{{ alerta.mensaje }}</span>
+        </div>
+        <div class="alerta-acciones-wrapper">
+          <button *ngIf="alerta.accion && alerta.accionCallback" 
+                  class="btn-accion-alerta" 
+                  (click)="alerta.accionCallback()" 
+                  title="{{ alerta.accion }}">
+            <i class="fas fa-arrow-right"></i>
+            {{ alerta.accion }}
+          </button>
+          <button class="btn-marcar-atendida" (click)="marcarAlertaComoAtendida(alerta)" title="Marcar como atendida">
+            <i class="fas fa-check"></i>
+            Atendida
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-toggle-filters" (click)="toggleFilters()" [class.active]="showFilters">
+    <i class="fas fa-sliders-h"></i>
+    <span>Filtros</span>
+  </button>
+
+ 
+  <div class="filters-sidebar" [class.open]="showFilters">
+    <div class="filters-sidebar-overlay" (click)="toggleFilters()"></div>
+    
+    <div class="filters-sidebar-content">
+      
+     
+      <div class="filters-header">
+        <div class="filters-header-title">
+          <i class="fas fa-filter"></i>
+          <h3>Filtros de Búsqueda</h3>
+        </div>
+        <button class="filters-close-btn" (click)="toggleFilters()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <div class="filters-body">
+        
+  
+        <div class="filter-item">
+          <label for="filterYear">
+            <i class="fas fa-calendar-alt"></i>
+            Año
+          </label>
+          <select id="filterYear" [(ngModel)]="filtroAnio" (change)="aplicarFiltros()">
+            <option value="">Todos los años</option>
+            <option *ngFor="let year of aniosDisponibles" [value]="year">{{ year }}</option>
+          </select>
+        </div>
+
+   
+        <div class="filter-item">
+          <label for="filterMonth">
+            <i class="fas fa-calendar"></i>
+            Mes
+          </label>
+          <select id="filterMonth" [(ngModel)]="filtroMes" (change)="aplicarFiltros()">
+            <option value="">Todos los meses</option>
+            <option value="1">Enero</option>
+            <option value="2">Febrero</option>
+            <option value="3">Marzo</option>
+            <option value="4">Abril</option>
+            <option value="5">Mayo</option>
+            <option value="6">Junio</option>
+            <option value="7">Julio</option>
+            <option value="8">Agosto</option>
+            <option value="9">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+          </select>
+        </div>
+
+   
+        <div class="filter-item">
+          <label for="filterDay">
+            <i class="fas fa-calendar-day"></i>
+            Fecha Específica
+          </label>
+          <input 
+            type="date" 
+            id="filterDay" 
+            [(ngModel)]="filtroDia" 
+            (change)="aplicarFiltros()"
+          />
+        </div>
+
+
+        <div class="filter-results-info">
+          <i class="fas fa-info-circle"></i>
+          <p>
+            Mostrando <strong>{{ solicitudesFiltradas.length }}</strong> de 
+            <strong>{{ solicitudesOriginal.length }}</strong> solicitudes
+          </p>
+        </div>
+
+      </div>
+
+
+      <div class="filters-footer">
+        <button class="btn-clear-filters" (click)="limpiarFiltros()">
+          <i class="fas fa-redo"></i>
+          Limpiar Filtros
+        </button>
+        <button class="btn-apply-filters" (click)="toggleFilters()">
+          <i class="fas fa-check"></i>
+          Aplicar
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="dashboard-kpi-row">
+    <div class="dashboard-kpi-card kpi-solicitudes">
+      <i class="fa fa-file-alt"></i>
+      <div class="kpi-num">{{ solicitudesFiltradas.length }}</div>
+      <div class="kpi-label">Solicitudes Totales</div>
+    </div>
+    
+    <div class="dashboard-kpi-card kpi-error" (click)="abrirModalErrores()">
+      <i class="fa fa-exclamation-triangle"></i>
+      <div class="kpi-num">{{ erroresEmisionPorcentaje }}%</div>
+      <div class="kpi-label">Errores en Emisión</div>
+    </div>
+    
+    <div class="dashboard-kpi-card kpi-time">
+      <i class="fa fa-clock"></i>
+      <div class="kpi-num">{{ tiempoPromedioRegistrosTexto }}</div>
+      <div class="kpi-label">Tiempo Promedio Registro</div>
+    </div>
+    
+    <div class="dashboard-kpi-card kpi-vencidas" (click)="abrirModalVencidas()">
+      <i class="fa fa-calendar-times"></i>
+      <div class="kpi-num">{{ licenciasVencidas }}</div>
+      <div class="kpi-label">Licencias Vencidas</div>
+    </div>
+    
+    <div class="dashboard-kpi-card kpi-tpe-itse" (click)="abrirModalTPEITSE()">
+      <i class="fa fa-clock"></i>
+      <div class="kpi-num">{{ tiempoPromedioEmisionITSETexto }}</div>
+      <div class="kpi-label">TPE ITSE</div>
+    </div>
+    
+    <div class="dashboard-kpi-card kpi-vencen-mes">
+      <i class="fa fa-calendar-check"></i>
+      <div class="kpi-num">{{ licenciasVencenEsteMes }}</div>
+      <div class="kpi-label">Vencen este Mes</div>
+    </div>
+  </div>
+
+  <!-- ✨ MAPA INTERACTIVO (MINI MAPA) ✨ -->
+  <div class="widget-mapa-interactivo" *ngIf="mostrarMapaInteractivo">
+    <div class="widget-header-mapa">
+      <div class="widget-title-mapa">
+        <i class="fas fa-map-marked-alt"></i>
+        <h3>Mapa de Locales y Fiscalizaciones</h3>
+      </div>
+      <div class="widget-controls-mapa">
+        <div class="control-tipo-mapa">
+          <button class="btn-tipo-mapa" 
+                  [class.active]="tipoMapaSeleccionado === 'locales'"
+                  (click)="cambiarTipoMapa('locales')">
+            <i class="fas fa-store"></i> Locales
+          </button>
+          <button class="btn-tipo-mapa" 
+                  [class.active]="tipoMapaSeleccionado === 'fiscalizaciones'"
+                  (click)="cambiarTipoMapa('fiscalizaciones')">
+            <i class="fas fa-clipboard-check"></i> Fiscalizaciones
+          </button>
+          <button class="btn-tipo-mapa" 
+                  [class.active]="tipoMapaSeleccionado === 'ambos'"
+                  (click)="cambiarTipoMapa('ambos')">
+            <i class="fas fa-layer-group"></i> Ambos
+          </button>
+        </div>
+        <div class="control-filtro-zona">
+          <select class="select-filtro-zona" [(ngModel)]="filtroZona" (change)="cambiarFiltroZona(filtroZona)">
+            <option value="todas">Todas las zonas</option>
+            <option *ngFor="let zona of zonasDisponibles" [value]="zona">{{ zona }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="widget-body-mapa">
+      <div id="mapa-interactivo-dashboard" class="mapa-interactivo-container"></div>
+      <div class="mapa-leyenda">
+        <div class="leyenda-item">
+          <i class="fas fa-circle" style="color: #3B82F6;"></i>
+          <span>Locales</span>
+        </div>
+        <div class="leyenda-item">
+          <i class="fas fa-circle" style="color: #EF4444;"></i>
+          <span>Fiscalizaciones Muy Graves</span>
+        </div>
+        <div class="leyenda-item">
+          <i class="fas fa-circle" style="color: #F59E0B;"></i>
+          <span>Fiscalizaciones Graves</span>
+        </div>
+        <div class="leyenda-item">
+          <i class="fas fa-circle" style="color: #FCD34D;"></i>
+          <span>Fiscalizaciones Leves</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- ✨ TABLA DE LOCALES PRÓXIMOS A VENCER ✨ -->
+  <div class="vencimientos-section">
+    <div class="vencimientos-header">
+      <div class="header-title">
+        <i class="fas fa-calendar-alt"></i>
+        <h2>Locales Próximos a Vencer</h2>
+      </div>
+      <div class="header-filtros">
+        <div class="filtro-item">
+          <label>
+            <i class="fas fa-calendar"></i>
+            Mes de Vencimiento
+          </label>
+          <select [(ngModel)]="filtroVencimientoMes" (change)="aplicarFiltrosVencimiento()">
+            <option value="">Todos los meses</option>
+            <option value="1">Enero</option>
+            <option value="2">Febrero</option>
+            <option value="3">Marzo</option>
+            <option value="4">Abril</option>
+            <option value="5">Mayo</option>
+            <option value="6">Junio</option>
+            <option value="7">Julio</option>
+            <option value="8">Agosto</option>
+            <option value="9">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
+          </select>
+        </div>
+        
+        <div class="filtro-item">
+          <label>
+            <i class="fas fa-filter"></i>
+            Estado
+          </label>
+          <select [(ngModel)]="filtroVencimientoEstado" (change)="aplicarFiltrosVencimiento()">
+            <option value="todos">Todos</option>
+            <option value="proximos">Próximos a vencer</option>
+            <option value="vencidos">Vencidos</option>
+          </select>
+        </div>
+        
+        <div class="filtro-item">
+          <label>
+            <i class="fas fa-clock"></i>
+            Días Anticipación
+          </label>
+          <input 
+            type="number" 
+            [(ngModel)]="diasAnticipacion" 
+            (change)="aplicarFiltrosVencimiento()" 
+            min="7" 
+            max="90" 
+            step="7"
+          />
+        </div>
+        
+        <button class="btn-limpiar" (click)="limpiarFiltrosVencimiento()">
+          <i class="fas fa-redo"></i>
+          Limpiar
+        </button>
+      </div>
+    </div>
+    
+    <div class="vencimientos-stats">
+      <div class="stat-badge stat-vencidos">
+        <i class="fas fa-times-circle"></i>
+        <span>{{ localesVencidos.length }} Vencidos</span>
+      </div>
+      <div class="stat-badge stat-proximos">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>{{ localesProximosVencer.length }} Próximos</span>
+      </div>
+      <div class="stat-badge stat-mes">
+        <i class="fas fa-calendar-day"></i>
+        <span>{{ licenciasVencenEsteMes }} Este Mes</span>
+      </div>
+      <div class="stat-badge stat-total">
+        <i class="fas fa-list"></i>
+        <span>{{ localesFiltradosVencimiento.length }} Mostrando</span>
+      </div>
+    </div>
+    
+    <div class="tabla-vencimientos-wrapper">
+      <table class="tabla-vencimientos" *ngIf="localesFiltradosVencimiento.length > 0">
+        <thead>
+          <tr>
+            <th>Razón Social</th>
+            <th>N° Expediente</th>
+            <th>Tipo</th>
+            <th>Fecha Vencimiento</th>
+            <th>Días Restantes</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let local of localesFiltradosVencimiento" 
+              [class.fila-vencido]="local.estadoVencimiento === 'vencido'"
+              [class.fila-urgente]="local.estadoVencimiento === 'urgente'"
+              [class.fila-proximo]="local.estadoVencimiento === 'proximo'">
+            <td class="col-razon">
+              <div class="razon-info">
+                <strong>{{ local.razon_social || 'N/A' }}</strong>
+                <small>{{ local.solicitante || '' }}</small>
+              </div>
+            </td>
+            <td class="col-expediente">{{ local.expediente || 'N/A' }}</td>
+            <td class="col-tipo">
+              <span class="badge-tipo" [class.badge-itse]="(local.tipo || '').toUpperCase() === 'ITSE'"
+                                       [class.badge-ecse]="(local.tipo || '').toUpperCase() === 'ECSE'">
+                {{ (local.tipo || 'N/A').toUpperCase() }}
+              </span>
+            </td>
+            <td class="col-fecha">{{ formatearFecha(local.vigencia) }}</td>
+            <td class="col-dias">
+              <span class="badge-dias" 
+                    [class.dias-vencido]="local.diasRestantes < 0"
+                    [class.dias-urgente]="local.diasRestantes >= 0 && local.diasRestantes <= 7"
+                    [class.dias-proximo]="local.diasRestantes > 7 && local.diasRestantes <= 15"
+                    [class.dias-normal]="local.diasRestantes > 15">
+                {{ local.diasRestantes < 0 ? 'VENCIDO' : local.diasRestantes + ' días' }}
+              </span>
+            </td>
+            <td class="col-estado">
+              <span class="badge-estado" 
+                    [class.estado-vencido]="local.estadoVencimiento === 'vencido'"
+                    [class.estado-urgente]="local.estadoVencimiento === 'urgente'"
+                    [class.estado-proximo]="local.estadoVencimiento === 'proximo'"
+                    [class.estado-normal]="local.estadoVencimiento === 'normal'">
+                <i class="fas" 
+                   [class.fa-times-circle]="local.estadoVencimiento === 'vencido'"
+                   [class.fa-exclamation-circle]="local.estadoVencimiento === 'urgente'"
+                   [class.fa-clock]="local.estadoVencimiento === 'proximo' || local.estadoVencimiento === 'normal'"></i>
+                {{ local.estadoVencimiento === 'vencido' ? 'VENCIDO' : 
+                   local.estadoVencimiento === 'urgente' ? 'URGENTE' : 
+                   local.estadoVencimiento === 'proximo' ? 'PRÓXIMO' : 'NORMAL' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div class="no-data" *ngIf="localesFiltradosVencimiento.length === 0">
+        <i class="fas fa-calendar-check"></i>
+        <p>No hay locales que cumplan con los filtros seleccionados</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ERRORES EN EMISIÓN -->
+  <div class="modal-overlay" *ngIf="mostrarModalErrores" (click)="cerrarModalErrores()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header error-gradient">
+        <div class="modal-icon-wrapper">
+          <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        <h2>Detalle de Errores en Emisión</h2>
+        <button class="modal-close-btn" (click)="cerrarModalErrores()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="modal-stats-grid">
+          <div class="modal-stat-card">
+            <div class="stat-icon error">
+              <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Porcentaje de Errores</span>
+              <span class="stat-value error">{{ erroresEmisionPorcentaje }}%</span>
+            </div>
+          </div>
+          
+          <div class="modal-stat-card">
+            <div class="stat-icon warning">
+              <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Total de Errores</span>
+              <span class="stat-value warning">{{ erroresDetalle.length }}</span>
+            </div>
+          </div>
+          
+          <div class="modal-stat-card">
+            <div class="stat-icon info">
+              <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Locales Registrados</span>
+              <span class="stat-value info">{{ solicitudesFiltradas.length }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-section" *ngIf="erroresDetalle.length > 0">
+          <h3 class="section-title">
+            <i class="fas fa-list"></i>
+            Lista de Errores Recientes
+          </h3>
+          <div class="modal-table-wrapper">
+            <table class="modal-table">
+              <thead>
+                <tr>
+                  <th>Licencia</th>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let error of erroresDetalle.slice(0, 5)">
+                  <td>{{ error.licencia || error.numerodeexpediente || 'N/A' }}</td>
+                  <td>
+                    <span class="badge badge-error">{{ error.tipo || error.accion }}</span>
+                  </td>
+                  <td>{{ error.descripcion || error.motivo || 'Sin descripción' }}</td>
+                  <td>{{ error.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        
+        <div class="modal-alert" *ngIf="erroresDetalle.length === 0">
+          <i class="fas fa-check-circle"></i>
+          <p>¡Excelente! No se han registrado errores en el sistema.</p>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-modal-secondary" (click)="cerrarModalErrores()">
+          <i class="fas fa-times"></i>
+          Cerrar
+        </button>
+        <button class="btn-modal-primary" (click)="exportarErroresExcel()">
+          <i class="fas fa-file-excel"></i>
+          Exportar a Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL TPE ITSE -->
+  <div class="modal-overlay" *ngIf="mostrarModalTPEITSE" (click)="cerrarModalTPEITSE()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+        <div class="modal-icon-wrapper">
+          <i class="fas fa-clock"></i>
+        </div>
+        <h2>Detalle de Tiempo Promedio de Emisión ITSE</h2>
+        <button class="modal-close-btn" (click)="cerrarModalTPEITSE()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="modal-stats-grid">
+          <div class="modal-stat-card">
+            <div class="stat-icon" style="background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Tiempo Promedio</span>
+              <span class="stat-value" style="color: #1E40AF;">{{ tiempoPromedioEmisionITSETexto }}</span>
+            </div>
+          </div>
+          
+          <div class="modal-stat-card">
+            <div class="stat-icon info">
+              <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Total Licencias ITSE</span>
+              <span class="stat-value info">{{ licenciasITSEConTiempo.length }}</span>
+            </div>
+          </div>
+          
+          <div class="modal-stat-card">
+            <div class="stat-icon success">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Con Tiempo Calculado</span>
+              <span class="stat-value success">{{ licenciasITSEConTiempo.length }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-alert-warning">
+          <i class="fas fa-info-circle"></i>
+          <p><strong>TPE = Tiempo Promedio de Emisión</strong></p>
+          <p><strong>Fórmula:</strong> TPE = Promedio(TF - TI)</p>
+          <p><strong>TI</strong> = Fecha de ingreso de Licencias (fecha_inicio o fecha de creación)</p>
+          <p><strong>TF</strong> = Fecha de fin de Expedición (fecha_finalizado)</p>
+          <p><strong>Evaluación:</strong> Semanal | <strong>Técnica:</strong> Observación, Ficha de Registro</p>
+          <p>Solo se consideran licencias ITSE con estado FINALIZADO y fecha_finalizado válida.</p>
+        </div>
+        
+        <div class="modal-section" *ngIf="licenciasITSEConTiempo.length > 0">
+          <h3 class="section-title">
+            <i class="fas fa-list"></i>
+            Listado de Licencias ITSE con Tiempo de Emisión (Últimas 15)
+          </h3>
+          <div class="modal-table-wrapper">
+            <table class="modal-table">
+              <thead>
+                <tr>
+                  <th>Razón Social</th>
+                  <th>Expediente</th>
+                  <th>Fecha Inicio</th>
+                  <th>Fecha Fin</th>
+                  <th>Tiempo Emisión</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let licencia of licenciasITSEConTiempo.slice(0, 15)">
+                  <td>
+                    <strong>{{ licencia.razon_social || 'N/A' }}</strong>
+                    <br/>
+                    <small>{{ licencia.nombres_apellidos || licencia.solicitante || '' }}</small>
+                  </td>
+                  <td>{{ licencia.numerodeexpediente || licencia.expediente || 'N/A' }}</td>
+                  <td>{{ formatearFecha(licencia.fechaInicio) }}</td>
+                  <td>{{ formatearFecha(licencia.fechaFin) }}</td>
+                  <td>
+                    <span class="badge" [style.background]="licencia.tiempoEmisionDias > tiempoPromedioEmisionITSE ? '#FEE2E2' : '#D1FAE5'" 
+                          [style.color]="licencia.tiempoEmisionDias > tiempoPromedioEmisionITSE ? '#991B1B' : '#065F46'">
+                      {{ formatearTiempoEmision(licencia.tiempoEmisionDias) }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="tabla-footer-note" *ngIf="licenciasITSEConTiempo.length > 15">
+            <i class="fas fa-info-circle"></i>
+            Mostrando 15 de {{ licenciasITSEConTiempo.length }} licencias ITSE. 
+            Las licencias se ordenan por tiempo de emisión (mayor a menor).
+          </p>
+        </div>
+        
+        <div class="modal-alert" *ngIf="licenciasITSEConTiempo.length === 0">
+          <i class="fas fa-info-circle"></i>
+          <p>No hay licencias ITSE con tiempo de emisión calculado en el período seleccionado.</p>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-modal-secondary" (click)="cerrarModalTPEITSE()">
+          <i class="fas fa-times"></i>
+          Cerrar
+        </button>
+        <button class="btn-modal-primary" (click)="exportarTPEITSEExcel()">
+          <i class="fas fa-file-excel"></i>
+          Exportar a Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL LICENCIAS VENCIDAS -->
+  <div class="modal-overlay" *ngIf="mostrarModalVencidas" (click)="cerrarModalVencidas()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <div class="modal-header vencido-gradient">
+        <div class="modal-icon-wrapper">
+          <i class="fas fa-calendar-times"></i>
+        </div>
+        <h2>Detalle de Licencias Vencidas</h2>
+        <button class="modal-close-btn" (click)="cerrarModalVencidas()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="modal-stats-grid">
+          <div class="modal-stat-card">
+            <div class="stat-icon danger">
+              <i class="fas fa-percentage"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">% Licencias Vencidas</span>
+              <span class="stat-value danger">{{ porcentajeLicenciasVencidas }}%</span>
+            </div>
+          </div>
+          
+          <div class="modal-stat-card">
+            <div class="stat-icon danger">
+              <i class="fas fa-ban"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Total Vencidas</span>
+              <span class="stat-value danger">{{ licenciasVencidas }}</span>
+            </div>
+          </div>
+          
+          <div class="modal-stat-card">
+            <div class="stat-icon success">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <span class="stat-label">Total Registradas</span>
+              <span class="stat-value success">{{ locales.length }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-alert-warning">
+          <i class="fas fa-info-circle"></i>
+          <p><strong>LV(%) = ({{ licenciasVencidas }} / {{ locales.length }}) * 100 = {{ porcentajeLicenciasVencidas }}%</strong></p>
+          <p>Se recomienda realizar la renovación de las licencias vencidas para mantener el cumplimiento normativo.</p>
+        </div>
+        
+        <div class="modal-section" *ngIf="localesVencidos.length > 0">
+          <h3 class="section-title">
+            <i class="fas fa-list"></i>
+            Listado de Licencias Vencidas (Últimas 10)
+          </h3>
+          <div class="modal-table-wrapper">
+            <table class="modal-table">
+              <thead>
+                <tr>
+                  <th>Razón Social</th>
+                  <th>Expediente</th>
+                  <th>Tipo</th>
+                  <th>Fecha Vencimiento</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let local of localesVencidos.slice(0, 10)">
+                  <td>
+                    <strong>{{ local.razon_social || 'N/A' }}</strong>
+                    <br/>
+                    <small>{{ local.solicitante || '' }}</small>
+                  </td>
+                  <td>{{ local.expediente || 'N/A' }}</td>
+                  <td>
+                    <span class="badge-tipo" 
+                          [class.badge-itse]="(local.tipo || '').toUpperCase() === 'ITSE'"
+                          [class.badge-ecse]="(local.tipo || '').toUpperCase() === 'ECSE'">
+                      {{ (local.tipo || 'N/A').toUpperCase() }}
+                    </span>
+                  </td>
+                  <td>{{ formatearFecha(local.vigencia) }}</td>
+                  <td>
+                    <span class="badge-estado estado-vencido">
+                      <i class="fas fa-times-circle"></i>
+                      VENCIDO
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="tabla-footer-note" *ngIf="localesVencidos.length > 10">
+            <i class="fas fa-info-circle"></i>
+            Mostrando 10 de {{ localesVencidos.length }} licencias vencidas. 
+            Consulte la tabla completa arriba para ver todos los detalles.
+          </p>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-modal-secondary" (click)="cerrarModalVencidas()">
+          <i class="fas fa-times"></i>
+          Cerrar
+        </button>
+        <button class="btn-modal-primary" (click)="exportarLicenciasVencidasExcel()">
+          <i class="fas fa-file-excel"></i>
+          Exportar a Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRAFICOS -->
+  <div class="dashboard-charts-row">
+    
+    <!-- Riesgo -->
+    <div class="dashboard-chart">
+      <div class="chart-header-actions">
+        <div class="chart-total-num">{{ totalPorRiesgo }}</div>
+        <button class="btn-exportar-grafico" (click)="exportarGraficoRiesgo()" title="Exportar como imagen">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+      <h3>Solicitudes por Riesgo</h3>
+      <canvas #chartRiesgo baseChart
+        data-chart="riesgo"
+        [data]="barRiesgoData"
+        [type]="'bar'"
+        [options]="barCategoriasOptions"
+        [legend]="false">
+      </canvas>
+      <div class="chart-legend-row">
+        <span class="chart-legend-item" *ngFor="let legend of riesgoLegends">
+          <span class="chart-legend-color" [ngStyle]="{'background': legend.color}"></span>
+          {{legend.label}}
+        </span>
+      </div>
+    </div>
+    
+    <!-- Localidad -->
+    <div class="dashboard-chart">
+      <div class="chart-header-actions">
+        <div class="chart-total-num">{{ totalPorLocalidad }}</div>
+        <button class="btn-exportar-grafico" (click)="exportarGraficoLocalidad()" title="Exportar como imagen">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+      <h3>Solicitudes por Localidad</h3>
+      <canvas #chartLocalidad baseChart
+        data-chart="localidad"
+        [data]="barLocalidadData"
+        [type]="'bar'"
+        [options]="barCategoriasOptions"
+        [legend]="false">
+      </canvas>
+      <div class="chart-legend-row">
+        <span class="chart-legend-item" *ngFor="let legend of localidadLegends">
+          <span class="chart-legend-color" [ngStyle]="{'background': legend.color}"></span>
+          {{legend.label}}
+        </span>
+      </div>
+    </div>
+    
+    <!-- Tiempo de Registro -->
+    <div class="dashboard-chart">
+      <div class="chart-header-actions">
+        <div class="chart-total-num">{{ promedioTiempoTramite }}<span style="font-size:.55em;font-weight:400;"> seg</span></div>
+        <button class="btn-exportar-grafico" (click)="exportarGraficoTiempoTramite()" title="Exportar como imagen">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+      <h3>Tiempo de Registro por Tipo de Trámite</h3>
+      <canvas #chartTiempoTramite baseChart
+        data-chart="tiempo"
+        [data]="barTiempoPorTramite"
+        [type]="'bar'"
+        [options]="barCategoriasOptions"
+        [legend]="false">
+      </canvas>
+      <div class="chart-legend-row">
+        <span class="chart-legend-item" *ngFor="let legend of tramiteLegends">
+          <span class="chart-legend-color" [ngStyle]="{'background': legend.color}"></span>
+          {{legend.label}}
+        </span>
+      </div>
+    </div>
+    
+    <!-- Acciones -->
+    <div class="dashboard-chart">
+      <div class="chart-header-actions">
+        <div class="chart-total-num">{{ totalAcciones }}</div>
+        <button class="btn-exportar-grafico" (click)="exportarGraficoAcciones()" title="Exportar como imagen">
+          <i class="fas fa-download"></i>
+        </button>
+      </div>
+      <h3>Acciones sobre Solicitudes</h3>
+      <canvas #chartAcciones baseChart
+        data-chart="acciones"
+        [data]="barAccionesData"
+        [type]="'bar'"
+        [options]="barCategoriasOptions"
+        [legend]="false">
+      </canvas>
+      <div class="chart-legend-row">
+        <span class="chart-legend-item" *ngFor="let legend of accionesLegends">
+          <span class="chart-legend-color" [ngStyle]="{'background': legend.color}"></span>
+          {{legend.label}}
+        </span>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

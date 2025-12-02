@@ -1,0 +1,303 @@
+/* ============================================
+   🔔 NOTIFICACIONES - DISEÑO MODERNO
+   ============================================ */
+
+.notificaciones-container {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.notificaciones-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+}
+
+.notificaciones-header h1 {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: -0.5px;
+}
+
+.notificaciones-header h1 i {
+  font-size: 28px;
+  color: var(--primary);
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-marcar-todas {
+  padding: 10px 18px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-marcar-todas:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ============================================
+   FILTROS
+   ============================================ */
+
+.filtros-notificaciones {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+}
+
+.filtro-btn {
+  padding: 10px 20px;
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filtro-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.filtro-btn.activo {
+  background: var(--primary-gradient);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(255, 104, 56, 0.3);
+}
+
+.filtro-btn i {
+  font-size: 14px;
+}
+
+/* ============================================
+   LISTA DE NOTIFICACIONES
+   ============================================ */
+
+.notificaciones-lista {
+  background: var(--bg-card);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.notificacion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+  transition: all var(--transition-base);
+  cursor: pointer;
+}
+
+.notificacion-item:last-child {
+  border-bottom: none;
+}
+
+.notificacion-item:hover {
+  background: var(--bg-hover);
+}
+
+.notificacion-item.no-leida {
+  background: rgba(255, 104, 56, 0.04);
+  border-left: 4px solid var(--primary);
+}
+
+.notificacion-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.icon-info {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563EB;
+}
+
+.icon-success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #059669;
+}
+
+.icon-warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #D97706;
+}
+
+.icon-error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #DC2626;
+}
+
+.notificacion-content {
+  flex: 1;
+}
+
+.notificacion-titulo {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
+}
+
+.notificacion-mensaje {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+}
+
+.notificacion-fecha {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notificacion-fecha i {
+  font-size: 12px;
+}
+
+.notificacion-actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.btn-eliminar-notif {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-eliminar-notif:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error);
+}
+
+/* ============================================
+   SIN NOTIFICACIONES
+   ============================================ */
+
+.sin-notificaciones {
+  padding: 80px 20px;
+  text-align: center;
+  color: var(--text-tertiary);
+}
+
+.sin-notificaciones i {
+  font-size: 72px;
+  margin-bottom: 20px;
+  display: block;
+  opacity: 0.3;
+}
+
+.sin-notificaciones h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+}
+
+.sin-notificaciones p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .notificaciones-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px;
+  }
+  
+  .notificaciones-header h1 {
+    font-size: 22px;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .btn-marcar-todas {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .filtros-notificaciones {
+    padding: 16px 20px;
+  }
+  
+  .notificacion-item {
+    padding: 16px 20px;
+  }
+  
+  .notificacion-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+}

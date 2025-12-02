@@ -1,0 +1,1191 @@
+<div class="reportes-container">
+  <!-- HEADER -->
+  <div class="reportes-header">
+    <div class="header-title">
+      <i class="fas fa-file-alt"></i>
+      <h2>REPORTE DE LICENCIAS ITSE Y ECSE</h2>
+    </div>
+    
+    <div class="header-filters">
+      <select [(ngModel)]="filtroEstado" class="filter-select">
+        <option value="">Todos los Estados</option>
+        <option value="EN PROCESO">En Proceso</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="FINALIZADO">Finalizado</option>
+        <option value="OBSERVADO">Observado</option>
+        <option value="ACEPTADO">Aceptado</option>
+      </select>
+      
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input 
+          type="text" 
+          placeholder="Buscar expediente..." 
+          [(ngModel)]="filtroExpediente" 
+          class="search-input"
+        />
+      </div>
+      
+      <button class="btn-exportar" (click)="exportarExcel()">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+      </button>
+
+      <!-- Limpiar filtros -->
+      <button class="btn-exportar" style="background:#94a3b8" (click)="filtroEstado='';filtroExpediente='';">
+        <i class="fas fa-eraser"></i> Limpiar filtros
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="tabla-wrapper">
+    <table class="reportes-table">
+      <thead>
+        <tr>
+          <th class="th-checkbox">
+            <input 
+              type="checkbox" 
+              [(ngModel)]="seleccionarTodos" 
+              (change)="toggleSeleccionTodos()" 
+            />
+          </th>
+          <th>N° Expediente</th>
+          <th>Solicitante</th>
+          <th>Nivel de Riesgo</th>
+          <th>Confiabilidad ML</th>
+          <th>Estado</th>
+          <th>Fecha de emisión</th>
+          <th>Creado por</th>
+          <th>Inspector</th>
+          <th>Acciones</th>
+          <th>Eliminar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let s of getSolicitudesFiltradas(); let i = index" class="tabla-row">
+          <td>
+            <input 
+              type="checkbox" 
+              [(ngModel)]="s.seleccionado" 
+              (change)="actualizarSeleccionTodos()" 
+            />
+          </td>
+          
+          <td>
+            <div class="expediente-cell">
+              <input
+                [(ngModel)]="s.numerodeexpediente"
+                name="expediente-{{i}}"
+                [readonly]="s.expedienteGuardado"
+                placeholder="N° Expediente"
+                (input)="s.expedienteEditado = true"
+                class="expediente-input"
+                [class.readonly]="s.expedienteGuardado"
+              />
+              <button
+                *ngIf="!s.expedienteGuardado && s.expedienteEditado && s.numerodeexpediente"
+                (click)="guardarExpediente(s)"
+                class="btn-save-expediente"
+                title="Guardar expediente">
+                <i class="fas fa-save"></i>
+              </button>
+            </div>
+          </td>
+          
+          <td class="td-solicitante">{{ s.solicitante }}</td>
+          
+          <td>
+            <span [class]="'badge-riesgo ' + getRiesgoClass(s.nivelRiesgoSugerido)">
+              {{ s.nivelRiesgoSugerido || 'SIN_DATOS' }}
+            </span>
+          </td>
+          
+          <td class="td-confiabilidad">
+            <span *ngIf="s.confiabilidad_ml !== undefined && s.confiabilidad_ml !== null" class="confiabilidad-badge">
+              {{ (s.confiabilidad_ml * 100) | number: '1.0-1' }}%
+            </span>
+            <span *ngIf="s.confiabilidad_ml === undefined || s.confiabilidad_ml === null">-</span>
+          </td>
+          
+          <td>
+            <span [class]="'badge-estado ' + getEstadoClass(s.estadoVisual)">
+              {{ s.estadoVisual }}
+            </span>
+          </td>
+          
+          <td class="td-fecha">{{ s.fecha ? (s.fecha | date:'dd/MM/yyyy') : '-' }}</td>
+          
+          <td class="td-creador">
+            <div class="creador-info">
+              <i class="fas fa-user-circle"></i>
+              {{ s.creadoPor }}
+            </div>
+          </td>
+          
+          <td class="td-inspector">{{ s.inspector || '-' }}</td>
+          
+          <td class="td-acciones">
+            <div class="acciones-grupo">
+              <button class="btn-accion btn-ver" title="Ver Detalle" (click)="verSolicitud(s)">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn-accion btn-editar" title="Editar" (click)="editarSolicitud(s)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-accion btn-check" title="Finalizar" (click)="abrirModalFinalizar(s)">
+                <i class="fas fa-check-double"></i>
+              </button>
+            </div>
+          </td>
+          
+          <td class="td-eliminar">
+            <button class="btn-eliminar" title="Eliminar" (click)="abrirModalEliminar(s.id)">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </td>
+        </tr>
+        
+        <tr *ngIf="getSolicitudesFiltradas().length === 0">
+          <td colspan="11" class="no-datos">
+            <i class="fas fa-inbox"></i>
+            <p>No hay solicitudes disponibles</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div class="reportes-paginacion" *ngIf="getTotalPaginas() > 1">
+    <button 
+      *ngFor="let p of [].constructor(getTotalPaginas()); let i = index" 
+      class="pag-btn" 
+      [class.active]="paginaActual === (i + 1)" 
+      (click)="irAPagina(i + 1)">
+      {{ i + 1 }}
+    </button>
+  </div>
+</div>
+
+<!-- ==================== MODAL VER DETALLE MODERNO ==================== -->
+<div *ngIf="showModalDetalle" class="modal-overlay" (click)="cerrarModalDetalle()">
+  <div class="modal-detalle" (click)="$event.stopPropagation()">
+    <!-- HEADER -->
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-file-alt"></i>
+        <h2>Detalles de la Solicitud</h2>
+      </div>
+      <button class="btn-cerrar" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- TABS -->
+    <div class="modal-tabs">
+      <button 
+        [class.active]="tabActivaDetalle === 'solicitante'" 
+        (click)="cambiarTabDetalle('solicitante')">
+        <i class="fas fa-user"></i> Solicitante
+      </button>
+      <button 
+        [class.active]="tabActivaDetalle === 'establecimiento'" 
+        (click)="cambiarTabDetalle('establecimiento')">
+        <i class="fas fa-building"></i> Establecimiento
+      </button>
+      <button 
+        [class.active]="tabActivaDetalle === 'tecnicos'" 
+        (click)="cambiarTabDetalle('tecnicos')">
+        <i class="fas fa-tools"></i> Datos Técnicos
+      </button>
+      <button 
+        [class.active]="tabActivaDetalle === 'evaluacion'" 
+        (click)="cambiarTabDetalle('evaluacion')">
+        <i class="fas fa-chart-line"></i> Evaluación
+      </button>
+      <button 
+        [class.active]="tabActivaDetalle === 'archivos'" 
+        (click)="cambiarTabDetalle('archivos')">
+        <i class="fas fa-folder-open"></i> Archivos
+      </button>
+      <button 
+        [class.active]="tabActivaDetalle === 'notificaciones'" 
+        (click)="cambiarTabDetalle('notificaciones')">
+        <i class="fas fa-bell"></i> Notificaciones
+      </button>
+    </div>
+
+    <!-- BODY -->
+    <div class="modal-body">
+      <!-- TAB SOLICITANTE -->
+      <div *ngIf="tabActivaDetalle === 'solicitante'" class="tab-content fade-in">
+        <div class="info-grid">
+          <div class="info-item">
+            <label><i class="fas fa-user"></i> Nombres y Apellidos:</label>
+            <span>{{ solicitudSeleccionada.nombres_apellidos || solicitudSeleccionada.solicitante || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-id-card"></i> DNI/CE:</label>
+            <span>{{ solicitudSeleccionada.dni_ce || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-envelope"></i> Correo:</label>
+            <span>{{ solicitudSeleccionada.correo || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-phone"></i> Teléfonos:</label>
+            <span>{{ solicitudSeleccionada.telefonos || '-' }}</span>
+          </div>
+          <div class="info-item full-width">
+            <label><i class="fas fa-home"></i> Domicilio:</label>
+            <span>{{ solicitudSeleccionada.domicilio || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fab fa-whatsapp"></i> Consentimiento WhatsApp:</label>
+            <span [ngClass]="{'badge-estado estado-aprobado': solicitudSeleccionada.whatsapp_consent == 1, 'badge-estado estado-rechazado': solicitudSeleccionada.whatsapp_consent != 1}">
+              {{ solicitudSeleccionada.whatsapp_consent == 1 ? 'Sí' : 'No' }}
+            </span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-sms"></i> Nº WhatsApp (usado):</label>
+            <span>{{ solicitudSeleccionada.whatsapp_numero || solicitudSeleccionada.telefonos || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-phone-square"></i> Nº WhatsApp alterno:</label>
+            <span>{{ solicitudSeleccionada.whatsapp_numero_alt || '-' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB ESTABLECIMIENTO -->
+      <div *ngIf="tabActivaDetalle === 'establecimiento'" class="tab-content fade-in">
+        <div class="info-grid">
+          <div class="info-item full-width">
+            <label><i class="fas fa-building"></i> Razón Social:</label>
+            <span>{{ solicitudSeleccionada.razon_social || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-hashtag"></i> RUC:</label>
+            <span>{{ solicitudSeleccionada.ruc || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-store"></i> Nombre Comercial:</label>
+            <span>{{ solicitudSeleccionada.nombre_comercial || '-' }}</span>
+          </div>
+          <div class="info-item full-width">
+            <label><i class="fas fa-map-marker-alt"></i> Dirección:</label>
+            <span>{{ solicitudSeleccionada.direccion || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-map-signs"></i> Referencia:</label>
+            <span>{{ solicitudSeleccionada.referencia || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-map-pin"></i> Localidad:</label>
+            <span>{{ solicitudSeleccionada.localidad || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-city"></i> Distrito:</label>
+            <span>{{ solicitudSeleccionada.distrito || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-building"></i> Provincia:</label>
+            <span>{{ solicitudSeleccionada.provincia || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-map"></i> Departamento:</label>
+            <span>{{ solicitudSeleccionada.departamento || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-phone-alt"></i> Teléfono Establecimiento:</label>
+            <span>{{ solicitudSeleccionada.telefonos_establecimiento || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-clock"></i> Horario:</label>
+            <span>{{ solicitudSeleccionada.horario_atencion || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-users"></i> Aforo:</label>
+            <span>{{ solicitudSeleccionada.aforo_declarado || '-' }}</span>
+          </div>
+        </div>
+
+        <!-- ✅ SECCIÓN DE COORDENADAS DEL MAPA -->
+        <div class="coordenadas-mapa">
+          <h4>
+            <i class="fas fa-map-marked-alt"></i>
+            Ubicación en el Mapa
+          </h4>
+          <div *ngIf="solicitudSeleccionada.latitud && solicitudSeleccionada.longitud; else sinCoordenadas">
+            <div class="coord-grid">
+              <div class="coord-item">
+                <label><i class="fas fa-location-arrow"></i> Latitud:</label>
+                <span>{{ solicitudSeleccionada.latitud | number:'1.6-6' }}</span>
+              </div>
+              <div class="coord-item">
+                <label><i class="fas fa-location-arrow"></i> Longitud:</label>
+                <span>{{ solicitudSeleccionada.longitud | number:'1.6-6' }}</span>
+              </div>
+            </div>
+            <a 
+              [href]="'https://www.google.com/maps?q=' + solicitudSeleccionada.latitud + ',' + solicitudSeleccionada.longitud"
+              target="_blank"
+              class="btn-ver-mapa">
+              <i class="fas fa-map-marker-alt"></i>
+              Abrir en Google Maps
+            </a>
+          </div>
+          <ng-template #sinCoordenadas>
+            <div class="sin-coordenadas">
+              <i class="fas fa-map-pin"></i>
+              <p>Esta solicitud no tiene coordenadas registradas</p>
+              <small>Las coordenadas se registran cuando se ingresa la ubicación en el mapa al crear o editar la solicitud</small>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+
+      <!-- TAB TÉCNICOS -->
+      <div *ngIf="tabActivaDetalle === 'tecnicos'" class="tab-content fade-in">
+        <div class="info-grid">
+          <div class="info-item">
+            <label><i class="fas fa-briefcase"></i> Giro:</label>
+            <span>{{ solicitudSeleccionada.giro_actividades || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-clipboard-list"></i> Actividad Específica:</label>
+            <span>{{ solicitudSeleccionada.actividad_especifica || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-expand-arrows-alt"></i> Área Ocupada:</label>
+            <span>{{ solicitudSeleccionada.area_ocupada || '-' }} m²</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-ruler-combined"></i> Área Terreno:</label>
+            <span>{{ solicitudSeleccionada.area_terreno || '-' }} m²</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-home"></i> Área Techada:</label>
+            <span>{{ solicitudSeleccionada.area_techada_por_nivel || '-' }} m²</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-tree"></i> Área Libre:</label>
+            <span>{{ solicitudSeleccionada.area_libre || '-' }} m²</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-layer-group"></i> Número de Pisos:</label>
+            <span>{{ solicitudSeleccionada.num_pisos || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-building"></i> Piso Ubicado:</label>
+            <span>{{ solicitudSeleccionada.piso_ubicado || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-calendar-alt"></i> Antigüedad Edificación:</label>
+            <span>{{ solicitudSeleccionada.antiguedad_edificacion_anios || '-' }} años</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-history"></i> Antigüedad Actividad:</label>
+            <span>{{ solicitudSeleccionada.antiguedad_actividad_anios || '-' }} años</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB EVALUACIÓN -->
+      <div *ngIf="tabActivaDetalle === 'evaluacion'" class="tab-content fade-in">
+        <div class="info-grid">
+          <div class="info-item">
+            <label><i class="fas fa-file-alt"></i> N° Expediente:</label>
+            <span class="badge-expediente">{{ solicitudSeleccionada.numerodeexpediente || 'SIN EXPEDIENTE' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-file-contract"></i> Tipo de Trámite:</label>
+            <span class="badge-tramite">{{ solicitudSeleccionada.tipo_tramite?.toUpperCase() || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-clipboard-check"></i> Tipo ITSE/ECSE:</label>
+            <span>{{ solicitudSeleccionada.tipo_itse || solicitudSeleccionada.tipo_ecse || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-fire"></i> Riesgo de Incendio:</label>
+            <span [class]="'badge-riesgo ' + getRiesgoClass(solicitudSeleccionada.riesgo_incendio)">
+              {{ solicitudSeleccionada.riesgo_incendio || '-' }}
+            </span>
+          </div>
+          <!-- ✅ COMENTADO - NO ELIMINADO
+          <div class="info-item">
+            <label><i class="fas fa-exclamation-triangle"></i> Riesgo de Colapso:</label>
+            <span>{{ solicitudSeleccionada.riesgo_colapso || '-' }}</span>
+          </div>
+          -->
+          <div class="info-item">
+            <label><i class="fas fa-info-circle"></i> Estado:</label>
+            <span [class]="'badge-estado ' + getEstadoClass(solicitudSeleccionada.estado)">
+              {{ solicitudSeleccionada.estadoVisual || solicitudSeleccionada.estado || '-' }}
+            </span>
+          </div>
+          <div class="info-item" *ngIf="solicitudSeleccionada.confiabilidad_ml">
+            <label><i class="fas fa-brain"></i> Confiabilidad ML:</label>
+            <span class="confiabilidad-badge">{{ (solicitudSeleccionada.confiabilidad_ml * 100) | number:'1.0-1' }}%</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-user-check"></i> Inspector:</label>
+            <span>{{ solicitudSeleccionada.inspector_asignado || solicitudSeleccionada.inspector || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-user-circle"></i> Creado por:</label>
+            <span>{{ solicitudSeleccionada.creadoPor || '-' }}</span>
+          </div>
+          <div class="info-item">
+            <label><i class="fas fa-calendar"></i> Fecha:</label>
+            <span>{{ solicitudSeleccionada.fecha ? (solicitudSeleccionada.fecha | date:'dd/MM/yyyy') : '-' }}</span>
+          </div>
+          <div class="info-item full-width" *ngIf="solicitudSeleccionada.motivo_rechazo">
+            <label><i class="fas fa-ban"></i> Motivo de Rechazo:</label>
+            <span class="texto-rechazo">{{ solicitudSeleccionada.motivo_rechazo }}</span>
+          </div>
+          <div class="info-item" *ngIf="solicitudSeleccionada.numero_resolucion">
+            <label><i class="fas fa-file-signature"></i> N° Resolución:</label>
+            <span>{{ solicitudSeleccionada.numero_resolucion }}</span>
+          </div>
+          <div class="info-item" *ngIf="solicitudSeleccionada.numero_certificado">
+            <label><i class="fas fa-certificate"></i> N° Certificado:</label>
+            <span>{{ solicitudSeleccionada.numero_certificado }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB ARCHIVOS -->
+      <div *ngIf="tabActivaDetalle === 'archivos'" class="tab-content fade-in">
+        <div *ngIf="solicitudSeleccionada.archivos && solicitudSeleccionada.archivos.length > 0; else noArchivos">
+          <div class="archivos-grid">
+            <div *ngFor="let archivo of solicitudSeleccionada.archivos" class="archivo-card">
+              <ng-container [ngSwitch]="archivo.archivo_tipo">
+                <div *ngSwitchCase="'imagen'" class="archivo-imagen">
+                  <img [src]="getArchivoUrl(archivo)" alt="Archivo">
+                  <div class="archivo-nombre">{{ archivo.archivo_nombre || 'Imagen' }}</div>
+                </div>
+                <a *ngSwitchCase="'pdf'" [href]="getArchivoUrl(archivo)" target="_blank" class="archivo-pdf">
+                  <i class="fas fa-file-pdf"></i>
+                  <div class="archivo-nombre">{{ archivo.archivo_nombre || 'PDF' }}</div>
+                </a>
+                <a *ngSwitchDefault [href]="getArchivoUrl(archivo)" target="_blank" class="archivo-default">
+                  <i class="fas fa-file"></i>
+                  <div class="archivo-nombre">{{ archivo.archivo_nombre || 'Archivo' }}</div>
+                </a>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+        <ng-template #noArchivos>
+          <div class="no-archivos">
+            <i class="fas fa-folder-open"></i>
+            <p>No hay archivos adjuntos</p>
+          </div>
+        </ng-template>
+
+        <!-- PANEL FOTOGRÁFICO -->
+        <div *ngIf="solicitudSeleccionada.panelFotografico && solicitudSeleccionada.panelFotografico.length > 0" class="panel-fotografico-section">
+          <h3><i class="fas fa-images"></i> Panel Fotográfico</h3>
+          <button class="btn-ver-panel" (click)="panelFotograficoVisible = true">
+            <i class="fas fa-eye"></i> Ver Panel Fotográfico Completo
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB NOTIFICACIONES -->
+      <div *ngIf="tabActivaDetalle === 'notificaciones'" class="tab-content fade-in">
+        <div class="notificaciones-log-section">
+          <h3><i class="fas fa-bell"></i> Historial de Notificaciones Enviadas</h3>
+          
+          <div *ngIf="logNotificaciones.length === 0" class="no-notificaciones">
+            <i class="fas fa-inbox"></i>
+            <p>No hay notificaciones registradas para esta solicitud</p>
+          </div>
+
+          <div *ngIf="logNotificaciones.length > 0" class="notificaciones-lista">
+            <div *ngFor="let notif of logNotificaciones" class="notificacion-item">
+              <div class="notif-header">
+                <div class="notif-tipo">
+                  <i [class]="getIconoNotificacion(notif.tipo_notificacion)"></i>
+                  <span class="tipo-nombre">{{ notif.tipo_notificacion }}</span>
+                </div>
+                <div class="notif-estado" [style.background-color]="getColorEstadoNotificacion(notif.estado_envio)">
+                  {{ notif.estado_envio }}
+                </div>
+              </div>
+              
+              <div class="notif-info">
+                <div class="notif-detalle">
+                  <p><strong>Destino:</strong> {{ notif.destino }}</p>
+                  <p><strong>Fecha:</strong> {{ notif.fecha_envio | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+                  <p *ngIf="notif.expediente"><strong>Expediente:</strong> {{ notif.numerodeexpediente || notif.expediente }}</p>
+                </div>
+                
+                <div class="notif-mensaje">
+                  <strong>Mensaje:</strong>
+                  <div class="mensaje-preview">{{ notif.mensaje }}</div>
+                </div>
+                
+                <div *ngIf="notif.error_detalle" class="notif-error">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <strong>Error:</strong> {{ notif.error_detalle }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+      <button class="btn-primary" (click)="generarExcelDetalle()">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+      </button>
+      <button class="btn-primary" (click)="editarSolicitud(solicitudSeleccionada); cerrarModalDetalle()">
+        <i class="fas fa-edit"></i> Editar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL EDITAR MODERNO ==================== -->
+<div *ngIf="showModalEditar" class="modal-overlay" (click)="cerrarModalEditar()">
+  <div class="modal-editar" (click)="$event.stopPropagation()">
+    <!-- HEADER -->
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-edit"></i>
+        <h2>Editar Solicitud</h2>
+      </div>
+      <button class="btn-cerrar" (click)="cerrarModalEditar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- TABS -->
+    <div class="modal-tabs">
+      <button 
+        [class.active]="tabActivaEditar === 'solicitante'" 
+        (click)="cambiarTabEditar('solicitante')">
+        <i class="fas fa-user"></i> Solicitante
+      </button>
+      <button 
+        [class.active]="tabActivaEditar === 'establecimiento'" 
+        (click)="cambiarTabEditar('establecimiento')">
+        <i class="fas fa-building"></i> Establecimiento
+      </button>
+      <button 
+        [class.active]="tabActivaEditar === 'tecnicos'" 
+        (click)="cambiarTabEditar('tecnicos')">
+        <i class="fas fa-tools"></i> Datos Técnicos
+      </button>
+      <button 
+        [class.active]="tabActivaEditar === 'evaluacion'" 
+        (click)="cambiarTabEditar('evaluacion')">
+        <i class="fas fa-chart-line"></i> Evaluación
+      </button>
+      <button 
+        [class.active]="tabActivaEditar === 'archivos'" 
+        (click)="cambiarTabEditar('archivos')">
+        <i class="fas fa-folder-open"></i> Archivos
+      </button>
+    </div>
+
+    <!-- BODY -->
+    <div class="modal-body">
+      <form (ngSubmit)="guardarEdicion()">
+        <!-- TAB SOLICITANTE -->
+        <div *ngIf="tabActivaEditar === 'solicitante'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item">
+              <label>Nombres y Apellidos:</label>
+              <input type="text" [(ngModel)]="editForm.nombres_apellidos" name="nombres_apellidos" />
+            </div>
+            <div class="form-item">
+              <label>DNI/CE:</label>
+              <div class="input-with-button">
+                <input type="text" [(ngModel)]="editForm.dni_ce" name="dni_ce" maxlength="8" />
+                <button type="button" (click)="buscarDni(editForm.dni_ce)" class="btn-buscar">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-item">
+              <label>Correo:</label>
+              <input type="email" [(ngModel)]="editForm.correo" name="correo" />
+            </div>
+            <div class="form-item">
+              <label>Teléfonos:</label>
+              <input type="text" [(ngModel)]="editForm.telefonos" name="telefonos" maxlength="9" />
+            </div>
+            <div class="form-item full-width">
+              <label>Domicilio:</label>
+              <input type="text" [(ngModel)]="editForm.domicilio" name="domicilio" />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB ESTABLECIMIENTO -->
+        <div *ngIf="tabActivaEditar === 'establecimiento'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item full-width">
+              <label>Razón Social:</label>
+              <input type="text" [(ngModel)]="editForm.razon_social" name="razon_social" />
+            </div>
+            <div class="form-item">
+              <label>RUC:</label>
+              <div class="input-with-button">
+                <input type="text" [(ngModel)]="editForm.ruc" name="ruc" maxlength="11" />
+                <button type="button" (click)="buscarRuc(editForm.ruc)" class="btn-buscar">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-item">
+              <label>Nombre Comercial:</label>
+              <input type="text" [(ngModel)]="editForm.nombre_comercial" name="nombre_comercial" />
+            </div>
+            <div class="form-item full-width">
+              <label>Dirección:</label>
+              <input type="text" [(ngModel)]="editForm.direccion" name="direccion" />
+            </div>
+            <div class="form-item">
+              <label>Referencia:</label>
+              <input type="text" [(ngModel)]="editForm.referencia" name="referencia" />
+            </div>
+            <div class="form-item">
+              <label>Localidad:</label>
+              <select [(ngModel)]="editForm.localidad" name="localidad">
+                <option value="">-- Selecciona --</option>
+                <option *ngFor="let l of localidades" [value]="l">{{ l }}</option>
+              </select>
+            </div>
+            <div class="form-item">
+              <label>Distrito:</label>
+              <input type="text" [(ngModel)]="editForm.distrito" name="distrito" readonly />
+            </div>
+            <div class="form-item">
+              <label>Provincia:</label>
+              <input type="text" [(ngModel)]="editForm.provincia" name="provincia" readonly />
+            </div>
+            <div class="form-item">
+              <label>Departamento:</label>
+              <input type="text" [(ngModel)]="editForm.departamento" name="departamento" readonly />
+            </div>
+            <div class="form-item">
+              <label>Teléfono Establecimiento:</label>
+              <input type="text" [(ngModel)]="editForm.telefonos_establecimiento" name="telefonos_establecimiento" />
+            </div>
+            <div class="form-item">
+              <label>Horario de Atención:</label>
+              <div class="horario-inputs">
+                <input type="time" [(ngModel)]="horaApertura" name="horaApertura" />
+                <span>a</span>
+                <input type="time" [(ngModel)]="horaCierre" name="horaCierre" />
+              </div>
+            </div>
+
+            <!-- ✅ LATITUD Y LONGITUD EN MODO EDICIÓN --><div class="form-item">
+              <label>Latitud:</label>
+              <input type="text" [(ngModel)]="editForm.latitud" name="latitud" placeholder="-8.1116778" />
+            </div>
+            <div class="form-item">
+              <label>Longitud:</label>
+              <input type="text" [(ngModel)]="editForm.longitud" name="longitud" placeholder="-79.0287632" />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB TÉCNICOS -->
+        <div *ngIf="tabActivaEditar === 'tecnicos'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item">
+              <label>Giro:</label>
+              <input type="text" [(ngModel)]="editForm.giro_actividades" name="giro_actividades" readonly />
+            </div>
+            <div class="form-item">
+              <label>Actividad Específica:</label>
+              <input type="text" [(ngModel)]="editForm.actividad_especifica" name="actividad_especifica" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Ocupada (m²):</label>
+              <input type="number" [(ngModel)]="editForm.area_ocupada" name="area_ocupada" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Terreno (m²):</label>
+              <input type="number" [(ngModel)]="editForm.area_terreno" name="area_terreno" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Techada (m²):</label>
+              <input type="number" [(ngModel)]="editForm.area_techada_por_nivel" name="area_techada_por_nivel" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Libre (m²):</label>
+              <input type="number" [(ngModel)]="editForm.area_libre" name="area_libre" readonly />
+            </div>
+            <div class="form-item">
+              <label>Número de Pisos:</label>
+              <input type="number" [(ngModel)]="editForm.num_pisos" name="num_pisos" readonly />
+            </div>
+            <div class="form-item">
+              <label>Piso Ubicado:</label>
+              <input type="text" [(ngModel)]="editForm.piso_ubicado" name="piso_ubicado" readonly />
+            </div>
+            <div class="form-item">
+              <label>Antigüedad Edificación (años):</label>
+              <input type="number" [(ngModel)]="editForm.antiguedad_edificacion_anios" name="antiguedad_edificacion_anios" readonly />
+            </div>
+            <div class="form-item">
+              <label>Antigüedad Actividad (años):</label>
+              <input type="number" [(ngModel)]="editForm.antiguedad_actividad_anios" name="antiguedad_actividad_anios" readonly />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB EVALUACIÓN -->
+        <div *ngIf="tabActivaEditar === 'evaluacion'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item">
+              <label>N° Expediente:</label>
+              <input type="text" [(ngModel)]="editForm.numerodeexpediente" name="numerodeexpediente" />
+            </div>
+            <div class="form-item">
+              <label>Tipo de Trámite:</label>
+              <input type="text" [value]="editForm.tipo_tramite" name="tipo_tramite" readonly />
+            </div>
+            <div class="form-item" *ngIf="editForm.tipo_tramite === 'itse'">
+              <label>Tipo ITSE:</label>
+              <input type="text" [value]="editForm.tipo_itse" name="tipo_itse" readonly />
+            </div>
+            <div class="form-item" *ngIf="editForm.tipo_tramite === 'ecse'">
+              <label>Tipo ECSE:</label>
+              <input type="text" [value]="editForm.tipo_ecse" name="tipo_ecse" readonly />
+            </div>
+            <div class="form-item">
+              <label>Nivel de Riesgo:</label>
+              <input type="text" [(ngModel)]="editForm.nivelRiesgoSugerido" name="nivelRiesgoSugerido" readonly />
+            </div>
+            <div class="form-item">
+              <label>Inspector Asignado:</label>
+              <select [(ngModel)]="editForm.inspector_asignado" name="inspector_asignado">
+                <option value="">-- Selecciona --</option>
+                <option *ngFor="let inspector of inspectores" [value]="inspector.usuario">
+                  {{ inspector.nombres_completos }}
+                </option>
+              </select>
+            </div>
+            <div class="form-item">
+              <label>Estado:</label>
+              <input type="text" [value]="editForm.estado" name="estado" readonly />
+            </div>
+            <div class="form-item">
+              <label>Aforo Declarado:</label>
+              <input type="number" [(ngModel)]="editForm.aforo_declarado" name="aforo_declarado" />
+            </div>
+            <div class="form-item">
+              <label>N° de Resolución:</label>
+              <input type="text" [(ngModel)]="editForm.numero_resolucion" name="numero_resolucion" />
+            </div>
+            <div class="form-item">
+              <label>N° de Certificado:</label>
+              <input type="text" [(ngModel)]="editForm.numero_certificado" name="numero_certificado" />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB ARCHIVOS -->
+        <div *ngIf="tabActivaEditar === 'archivos'" class="tab-content fade-in">
+          <div class="archivos-section">
+            <!-- ARCHIVOS SUBIDOS -->
+            <div class="archivos-subidos-section">
+              <h4><i class="fas fa-check-circle"></i> Archivos Subidos</h4>
+              <div *ngIf="archivosSubidos && archivosSubidos.length > 0" class="archivos-lista">
+                <div *ngFor="let archivo of archivosSubidos" class="archivo-item">
+                  <a [href]="getArchivoUrl(archivo)" target="_blank" class="archivo-link">
+                    <i class="fas fa-paperclip"></i>
+                    {{ archivo.archivo_nombre || archivo.archivoNombre }}
+                  </a>
+                  <button type="button" class="btn-eliminar-archivo" (click)="eliminarArchivoSubido(archivo)">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div *ngIf="!archivosSubidos || archivosSubidos.length === 0" class="no-archivos-mensaje">
+                <i class="fas fa-folder-open"></i>
+                <p>No hay archivos subidos</p>
+              </div>
+            </div>
+
+            <!-- ARCHIVOS FALTANTES -->
+            <div class="archivos-faltantes-section" *ngIf="archivosFaltantes.length > 0">
+              <h4><i class="fas fa-exclamation-circle"></i> Archivos Faltantes ({{ editForm.nivelRiesgoSugerido || editForm.riesgo_incendio }})</h4>
+              <div class="archivos-lista">
+                <div *ngFor="let nombre of archivosFaltantes" class="archivo-faltante-item">
+                  <label class="archivo-faltante-label">
+                    <i class="fas fa-file-upload"></i>
+                    {{ nombre }}
+                  </label>
+                  <input type="file" (change)="onFileFaltanteSelected(nombre, $event)" class="file-input" />
+                  <span *ngIf="archivosParaSubir[nombre]" class="file-selected">
+                    <i class="fas fa-check"></i> {{ archivosParaSubir[nombre]?.name }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="archivosFaltantes.length === 0" class="archivos-completos">
+              <i class="fas fa-check-circle"></i>
+              <p>Todos los archivos obligatorios han sido subidos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- FOOTER CON BOTONES -->
+        <div class="modal-footer">
+          <button type="button" class="btn-secondary" (click)="cerrarModalEditar()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button type="submit" class="btn-primary">
+            <i class="fas fa-save"></i> Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL FINALIZAR ==================== -->
+<div *ngIf="showModalFinalizar" class="modal-overlay" (click)="cerrarModalFinalizar()">
+  <div class="modal-finalizar" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-check-double"></i>
+        <h2>Finalizar Solicitud</h2>
+      </div>
+      <button class="btn-cerrar" (click)="cerrarModalFinalizar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="checks-container">
+        <div class="check-item">
+          <div>
+            <input 
+              type="checkbox"
+              [checked]="solicitudSeleccionada?.check_inspector == 1"
+              disabled
+            />
+            <label>
+              <i class="fas fa-user-tie"></i>
+              Inspector Asignado
+            </label>
+          </div>
+        </div>
+        <div class="check-item">
+          <div>
+            <input 
+              type="checkbox"
+              [(ngModel)]="finalizarChecks.administrativo"
+              [disabled]="usuarioRol !== 'Administrativo' || !finalizarChecks.inspector"
+            />
+            <label>
+              <i class="fas fa-user-cog"></i>
+              Administrativo
+            </label>
+          </div>
+          <small *ngIf="!finalizarChecks.inspector && usuarioRol === 'Administrativo'" class="warning-text">
+            <i class="fas fa-exclamation-circle"></i> Esperando aprobación del Inspector
+          </small>
+        </div>
+        <div class="check-item">
+          <div>
+            <input 
+              type="checkbox"
+              [(ngModel)]="finalizarChecks.administrador"
+              [disabled]="usuarioRol !== 'Administrador' || !finalizarChecks.inspector || !finalizarChecks.administrativo"
+            />
+            <label>
+              <i class="fas fa-user-shield"></i>
+              Administrador
+            </label>
+          </div>
+          <small *ngIf="(!finalizarChecks.inspector || !finalizarChecks.administrativo) && usuarioRol === 'Administrador'" class="warning-text">
+            <i class="fas fa-exclamation-circle"></i> Esperando aprobación de Inspector y Administrativo
+          </small>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModalFinalizar()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button 
+        *ngIf="puedeFinalizar()" 
+        class="btn-success" 
+        (click)="finalizarProceso()">
+        <i class="fas fa-certificate"></i> Generar Resolución
+      </button>
+      <button 
+        *ngIf="!puedeFinalizar() && (usuarioRol === 'Administrativo' || usuarioRol === 'Administrador')" 
+        class="btn-primary" 
+        (click)="aceptarMiCheck()">
+        <i class="fas fa-check"></i> Aceptar
+      </button>
+      <button class="btn-danger" (click)="abrirModalMotivoRechazo()">
+        <i class="fas fa-ban"></i> Rechazar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL CERTIFICADO ==================== -->
+<div *ngIf="showModalCertificado" class="modal-overlay">
+  <div class="modal-certificado">
+    <div class="modal-header-certificado">
+      <div class="header-icon">
+        <i class="fas fa-certificate"></i>
+      </div>
+      <div class="header-text">
+        <h2>Certificado ITSE Generado</h2>
+        <p>Inspección Técnica de Seguridad en Edificaciones</p>
+      </div>
+      <button class="btn-cerrar" (click)="cerrarModalCertificado()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-certificado">
+      <div class="certificado-preview">
+        <div class="preview-header">
+          <i class="fas fa-file-pdf"></i>
+          <span>Vista Previa de la Información</span>
+        </div>
+        
+        <div class="certificado-grid">
+          <div class="cert-item">
+            <label><i class="fas fa-hashtag"></i> N° Expediente:</label>
+            <span>{{ solicitudCertificado?.numerodeexpediente || 'N/A' }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-file-signature"></i> N° Certificado:</label>
+            <span>{{ solicitudCertificado?.numero_certificado || 'N/A' }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-file-contract"></i> N° Resolución:</label>
+            <span>{{ solicitudCertificado?.numero_resolucion || 'N/A' }}</span>
+          </div>
+          <div class="cert-item full-width">
+            <label><i class="fas fa-store"></i> Nombre Comercial:</label>
+            <span>{{ solicitudCertificado?.nombre_comercial || 'N/A' }}</span>
+          </div>
+          <div class="cert-item full-width">
+            <label><i class="fas fa-map-marker-alt"></i> Dirección:</label>
+            <span>{{ solicitudCertificado?.direccion }} {{ solicitudCertificado?.referencia }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-map"></i> Distrito:</label>
+            <span>{{ solicitudCertificado?.distrito || 'HUANCHACO' }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-city"></i> Provincia:</label>
+            <span>{{ solicitudCertificado?.provincia || 'TRUJILLO' }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-map-marked-alt"></i> Departamento:</label>
+            <span>{{ solicitudCertificado?.departamento || 'LA LIBERTAD' }}</span>
+          </div>
+          <div class="cert-item full-width">
+            <label><i class="fas fa-user"></i> Solicitante:</label>
+            <span>{{ solicitudCertificado?.solicitante || solicitudCertificado?.nombres_apellidos || 'N/A' }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-users"></i> Aforo Declarado:</label>
+            <span>{{ solicitudCertificado?.aforo_declarado || 'N/A' }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-ruler-combined"></i> Área Ocupada:</label>
+            <span>{{ solicitudCertificado?.area_ocupada ? (solicitudCertificado?.area_ocupada + ' m²') : 'N/A' }}</span>
+          </div>
+          <div class="cert-item full-width">
+            <label><i class="fas fa-briefcase"></i> Giro o Actividad:</label>
+            <span>{{ solicitudCertificado?.giro_actividades || 'N/A' }}</span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-exclamation-triangle"></i> Nivel de Riesgo:</label>
+            <span class="riesgo-badge" [ngClass]="{
+              'riesgo-alto': (solicitudCertificado?.riesgo_incendio || '').toUpperCase() === 'ALTO' || (solicitudCertificado?.riesgo_incendio || '').toUpperCase() === 'MUY ALTO',
+              'riesgo-medio': (solicitudCertificado?.riesgo_incendio || '').toUpperCase() === 'MEDIO' || (solicitudCertificado?.riesgo_incendio || '').toUpperCase() === 'BAJO'
+            }">
+              {{ solicitudCertificado?.riesgo_incendio || solicitudCertificado?.nivelRiesgoSugerido || 'N/A' }}
+            </span>
+          </div>
+          <div class="cert-item">
+            <label><i class="fas fa-clock"></i> Vigencia:</label>
+            <span class="vigencia-badge">2 AÑOS</span>
+          </div>
+        </div>
+
+        <div class="certificado-nota">
+          <i class="fas fa-info-circle"></i>
+          <p>Al hacer clic en "Generar PDF", se descargará el certificado oficial con la imagen de fondo correspondiente al nivel de riesgo y toda la información sobrescrita en las posiciones correctas.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer-certificado">
+      <button class="btn-secondary" (click)="cerrarModalCertificado()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+      <button class="btn-success-cert" (click)="imprimirCertificado()">
+        <i class="fas fa-file-pdf"></i> Generar PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PANEL FOTOGRÁFICO ==================== -->
+<div *ngIf="panelFotograficoVisible" class="modal-overlay" (click)="panelFotograficoVisible = false">
+  <div class="modal-panel-fotografico" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-images"></i>
+        <h2>Panel Fotográfico</h2>
+      </div>
+      <button class="btn-cerrar" (click)="panelFotograficoVisible = false">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="panel-info">
+        <div class="info-row">
+          <span><strong>Expediente:</strong> {{ solicitudSeleccionada?.numerodeexpediente || 'SIN DATO' }}</span>
+          <span><strong>Nombre Comercial:</strong> {{ solicitudSeleccionada?.nombre_comercial || 'SIN DATO' }}</span>
+        </div>
+        <div class="info-row">
+          <span><strong>Inspector:</strong> {{ solicitudSeleccionada?.inspector || solicitudSeleccionada?.inspector_asignado || 'SIN DATO' }}</span>
+          <span><strong>Fecha:</strong> {{ solicitudSeleccionada?.fecha | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <table class="panel-table">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Descripción</th>
+            <th>¿Cumple?</th>
+            <th>Fecha</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let foto of solicitudSeleccionada?.panelFotografico">
+            <td>
+              <img 
+                [src]="'http://localhost:3000'+foto.imagen_url" 
+                alt="Foto" 
+                class="panel-foto"
+              />
+            </td>
+            <td>{{ foto.descripcion }}</td>
+            <td class="td-cumple">
+              <span *ngIf="esCumple(foto.cumple)" class="cumple-si">✔️ SÍ</span>
+              <span *ngIf="!esCumple(foto.cumple)" class="cumple-no">❌ NO</span>
+            </td>
+            <td>{{ foto.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="panelFotograficoVisible = false">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL MOTIVO RECHAZO ==================== -->
+<div *ngIf="showModalMotivoRechazo" class="modal-overlay">
+  <div class="modal-pequeno">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-ban"></i>
+        <h3>Motivo de Rechazo</h3>
+      </div>
+    </div>
+    <div class="modal-body">
+      <select [(ngModel)]="motivoRechazo" class="select-motivo">
+        <option value="" disabled selected>Seleccione un motivo</option>
+        <option value="Por observaciones">Por observaciones</option>
+        <option value="Falta documentación">Falta documentación</option>
+        <option value="Otro">Otro...</option>
+      </select>
+      <textarea 
+        *ngIf="motivoRechazo === 'Otro'"
+        [(ngModel)]="motivoRechazoOtro"
+        placeholder="Especifique el motivo"
+        rows="3"
+        class="textarea-motivo"
+      ></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showModalMotivoRechazo = false">
+        Cancelar
+      </button>
+      <button class="btn-danger" [disabled]="!motivoRechazo" (click)="confirmarRechazo()">
+        Confirmar Rechazo
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL ELIMINAR ==================== -->
+<div *ngIf="showModalEliminar" class="modal-overlay">
+  <div class="modal-pequeno">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-trash-alt"></i>
+        <h3>Eliminar Solicitud</h3>
+      </div>
+    </div>
+    <div class="modal-body">
+      <p class="texto-advertencia">
+        <i class="fas fa-exclamation-triangle"></i>
+        ¿Está seguro de eliminar esta solicitud?
+      </p>
+      <select [(ngModel)]="motivoEliminar" class="select-motivo">
+        <option value="" disabled selected>Seleccione motivo</option>
+        <option value="Error en el proceso de solicitud">Error en el proceso</option>
+        <option value="Duplicado">Duplicado</option>
+        <option value="Retiro de solicitud">Retiro de solicitud</option>
+        <option value="Otro">Otro...</option>
+      </select>
+      <textarea 
+        *ngIf="motivoEliminar === 'Otro'"
+        [(ngModel)]="motivoEliminarOtro"
+        placeholder="Especifique el motivo"
+        rows="3"
+        class="textarea-motivo"
+      ></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="showModalEliminar = false">
+        Cancelar
+      </button>
+      <button 
+        class="btn-danger" 
+        [disabled]="!motivoEliminar || (motivoEliminar === 'Otro' && !motivoEliminarOtro)" 
+        (click)="confirmarEliminar()">
+        Eliminar
+      </button>
+    </div>
+  </div>
+</div>

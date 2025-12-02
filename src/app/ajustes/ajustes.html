@@ -1,0 +1,434 @@
+<div class="ajustes-container">
+  
+  <!-- HEADER ESTILO REPORTES -->
+  <div class="ajustes-header">
+    <div class="ajustes-header-content">
+      <h1>Gestión de Usuarios</h1>
+      <p>Administra los usuarios del sistema</p>
+    </div>
+  </div>
+
+  <!-- BARRA DE BÚSQUEDA Y ACCIONES -->
+  <div class="ajustes-search-bar">
+    <div class="search-box">
+      <i class="fas fa-search"></i>
+      <input 
+        type="text" 
+        placeholder="Buscar usuario..." 
+        [(ngModel)]="searchQuery"
+        class="search-input">
+    </div>
+    
+    <button class="btn-registrar" (click)="abrirModalRegistrar()">
+      <i class="fas fa-user-plus"></i>
+      Nuevo Usuario
+    </button>
+  </div>
+
+  <!-- 3. TABLA -->
+  <div class="tabla-container">
+    <table class="tabla-usuarios">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>USUARIO</th>
+          <th>NOMBRES COMPLETOS</th>
+          <th>EMAIL</th>
+          <th>ROL</th>
+          <th>FECHA CREACIÓN</th>
+          <th>ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let usuario of usuariosFiltrados">
+          <td>{{ usuario.id }}</td>
+          <td>
+            <div class="usuario-cell">
+              <div class="avatar" *ngIf="!usuario.foto_perfil">
+                {{ getIniciales(usuario.fullName) }}
+              </div>
+              <img [src]="usuario.foto_perfil" alt="Avatar" class="avatar" *ngIf="usuario.foto_perfil">
+              <span>{{ usuario.username }}</span>
+            </div>
+          </td>
+          <td>{{ usuario.fullName }}</td>
+          <td>{{ usuario.email || '-' }}</td>
+          <td>
+            <span class="badge-rol" [ngClass]="{
+              'badge-admin': usuario.roleName === 'Administrador',
+              'badge-administrativo': usuario.roleName === 'Administrativo',
+              'badge-inspector': usuario.roleName === 'Inspector'
+            }">
+              {{ usuario.roleName }}
+            </span>
+          </td>
+          <td>{{ formatearFecha(usuario.createdAt) }}</td>
+          <td>
+            <div class="acciones">
+              <button class="btn-accion btn-editar" (click)="abrirModalEditar(usuario)">
+                <i class="fas fa-edit"></i> Editar
+              </button>
+              <button class="btn-accion btn-password" (click)="abrirModalPassword(usuario)" *ngIf="esAdministrador()">
+                <i class="fas fa-key"></i> Password
+              </button>
+              <button class="btn-accion btn-eliminar" (click)="abrirModalEliminar(usuario)" *ngIf="esAdministrador()">
+                <i class="fas fa-trash"></i> Eliminar
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="usuariosFiltrados.length === 0">
+      <i class="fas fa-users"></i>
+      <p>No se encontraron usuarios</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================
+     MODAL: REGISTRAR USUARIO
+     ============================================ -->
+<div class="modal-overlay" *ngIf="showModalRegistrar" (click)="cerrarModalRegistrar()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-user-plus"></i> Registrar Nuevo Usuario</h2>
+      <button class="btn-close" (click)="cerrarModalRegistrar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form>
+        <!-- Información Básica -->
+        <div class="form-section">
+          <h3><i class="fas fa-id-card"></i> Información Básica</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-user"></i> Usuario <span class="required">*</span></label>
+              <input type="text" [(ngModel)]="nuevoUsuario.username" name="username" placeholder="Ingrese usuario">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-address-card"></i> Nombre Completo <span class="required">*</span></label>
+              <input type="text" [(ngModel)]="nuevoUsuario.fullName" name="fullName" placeholder="Nombres y apellidos">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-envelope"></i> Email <span class="required">*</span></label>
+              <input type="email" [(ngModel)]="nuevoUsuario.email" name="email" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-shield-alt"></i> Rol <span class="required">*</span></label>
+              <select [(ngModel)]="nuevoUsuario.roleId" name="roleId" [disabled]="roles.length === 0">
+                <option *ngIf="roles.length === 0" [ngValue]="null">Cargando roles...</option>
+                <option *ngFor="let rol of roles" [ngValue]="rol.id">
+                  {{ rol.name }} (ID: {{ rol.id }})
+                </option>
+              </select>
+              <small *ngIf="roles.length === 0" style="color: #dc3545; display: block; margin-top: 4px;">
+                ⚠️ Los roles se están cargando...
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seguridad -->
+        <div class="form-section">
+          <h3><i class="fas fa-lock"></i> Seguridad</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-key"></i> Contraseña <span class="required">*</span></label>
+              <div class="password-input-wrapper">
+                <input [type]="mostrarPasswordNuevo ? 'text' : 'password'" [(ngModel)]="nuevoUsuario.password" name="password" placeholder="Mínimo 8 caracteres">
+                <button type="button" class="btn-toggle-password" (click)="mostrarPasswordNuevo = !mostrarPasswordNuevo">
+                  <i [class]="mostrarPasswordNuevo ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-check-circle"></i> Confirmar Contraseña <span class="required">*</span></label>
+              <div class="password-input-wrapper">
+                <input [type]="mostrarConfirmarNuevo ? 'text' : 'password'" [(ngModel)]="nuevoUsuario.confirmarPassword" name="confirmarPassword" placeholder="Repita la contraseña">
+                <button type="button" class="btn-toggle-password" (click)="mostrarConfirmarNuevo = !mostrarConfirmarNuevo">
+                  <i [class]="mostrarConfirmarNuevo ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos Adicionales -->
+        <div class="form-section">
+          <h3><i class="fas fa-info-circle"></i> Datos Adicionales (Opcionales)</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-id-badge"></i> DNI</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.dni" name="dni" placeholder="12345678" maxlength="8">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-phone"></i> Teléfono</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.telefono" name="telefono" placeholder="987654321">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-briefcase"></i> Cargo</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.cargo" name="cargo" placeholder="Inspector">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-building"></i> Departamento</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.departamento" name="departamento" placeholder="Defensa Civil">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar"></i> Fecha de Ingreso</label>
+              <input type="date" [(ngModel)]="nuevoUsuario.fecha_ingreso" name="fecha_ingreso">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-hashtag"></i> ID Empleado</label>
+              <input type="text" [(ngModel)]="nuevoUsuario.id_empleado" name="id_empleado" placeholder="EMP-001">
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModalRegistrar()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn-primary" (click)="registrarUsuario()">
+        <i class="fas fa-save"></i> Registrar Usuario
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: EDITAR USUARIO
+     ============================================ -->
+<div class="modal-overlay" *ngIf="showModalEditar" (click)="cerrarModalEditar()">
+  <div class="modal-content modal-large" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-user-edit"></i> Editar Usuario</h2>
+      <button class="btn-close" (click)="cerrarModalEditar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form>
+        <!-- Foto de Perfil -->
+        <div class="form-section">
+          <h3><i class="fas fa-camera"></i> Foto de Perfil</h3>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div class="avatar" style="width: 120px; height: 120px; font-size: 40px; margin: 0 auto 16px;" *ngIf="!fotoPerfilUrl">
+              {{ getIniciales(editarUsuarioForm.fullName) }}
+            </div>
+            <img [src]="fotoPerfilUrl" alt="Foto de perfil" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; margin: 0 auto 16px; display: block; border: 3px solid #E2E8F0;" *ngIf="fotoPerfilUrl">
+            
+            <label for="file-editar" class="btn-secondary" style="cursor: pointer;">
+              <i class="fas fa-upload"></i> Cambiar Foto
+            </label>
+            <input type="file" id="file-editar" (change)="onFileSelectedEditar($event)" accept="image/*" style="display: none;">
+          </div>
+        </div>
+
+        <!-- Información Básica -->
+        <div class="form-section">
+          <h3><i class="fas fa-id-card"></i> Información Básica</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-user"></i> Usuario</label>
+              <input type="text" [(ngModel)]="editarUsuarioForm.username" name="username" disabled>
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-address-card"></i> Nombre Completo <span class="required">*</span></label>
+              <input type="text" [(ngModel)]="editarUsuarioForm.fullName" name="fullName" placeholder="Nombres y apellidos">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-envelope"></i> Email <span class="required">*</span></label>
+              <input type="email" [(ngModel)]="editarUsuarioForm.email" name="email" placeholder="correo@ejemplo.com">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-shield-alt"></i> Rol</label>
+              <select [(ngModel)]="editarUsuarioForm.roleId" name="roleId" [disabled]="roles.length === 0">
+                <option *ngIf="roles.length === 0" value="">Cargando roles...</option>
+                <option *ngFor="let rol of roles" [value]="rol.id">
+                  {{ rol.name }} (ID: {{ rol.id }})
+                </option>
+              </select>
+              <small *ngIf="roles.length === 0" style="color: #dc3545; display: block; margin-top: 4px;">
+                ⚠️ Los roles se están cargando...
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Datos Personales -->
+        <div class="form-section">
+          <h3><i class="fas fa-user-circle"></i> Datos Personales</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-id-badge"></i> DNI</label>
+              <input type="text" [(ngModel)]="editarUsuarioForm.dni" name="dni" placeholder="12345678" maxlength="8">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-phone"></i> Teléfono</label>
+              <input type="text" [(ngModel)]="editarUsuarioForm.telefono" name="telefono" placeholder="987654321">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar"></i> Fecha de Nacimiento</label>
+              <input type="date" [(ngModel)]="editarUsuarioForm.fecha_nacimiento" name="fecha_nacimiento">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-venus-mars"></i> Género</label>
+              <select [(ngModel)]="editarUsuarioForm.genero" name="genero">
+                <option value="">Seleccionar</option>
+                <option value="Masculino">Masculino</option>
+                <option value="Femenino">Femenino</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label><i class="fas fa-map-marker-alt"></i> Dirección</label>
+            <input type="text" [(ngModel)]="editarUsuarioForm.direccion" name="direccion" placeholder="Av. Ejemplo 123">
+          </div>
+        </div>
+
+        <!-- Datos Laborales -->
+        <div class="form-section">
+          <h3><i class="fas fa-briefcase"></i> Datos Laborales</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-user-tie"></i> Cargo</label>
+              <input type="text" [(ngModel)]="editarUsuarioForm.cargo" name="cargo" placeholder="Inspector">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-building"></i> Departamento</label>
+              <input type="text" [(ngModel)]="editarUsuarioForm.departamento" name="departamento" placeholder="Defensa Civil">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label><i class="fas fa-calendar-alt"></i> Fecha de Ingreso</label>
+              <input type="date" [(ngModel)]="editarUsuarioForm.fecha_ingreso" name="fecha_ingreso">
+            </div>
+            <div class="form-group">
+              <label><i class="fas fa-hashtag"></i> ID Empleado</label>
+              <input type="text" [(ngModel)]="editarUsuarioForm.id_empleado" name="id_empleado" placeholder="EMP-001">
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModalEditar()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn-primary" (click)="guardarEdicionUsuario()">
+        <i class="fas fa-save"></i> Guardar Cambios
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: CAMBIAR CONTRASEÑA
+     ============================================ -->
+<div class="modal-overlay" *ngIf="showModalPassword" (click)="cerrarModalPassword()">
+  <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2><i class="fas fa-key"></i> Cambiar Contraseña</h2>
+      <button class="btn-close" (click)="cerrarModalPassword()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="info-box" *ngIf="usuarioSeleccionado">
+        <p><strong>Usuario:</strong> {{ usuarioSeleccionado.username }}</p>
+        <p><strong>Nombre:</strong> {{ usuarioSeleccionado.fullName }}</p>
+      </div>
+
+      <form>
+        <div class="form-group">
+          <label><i class="fas fa-lock"></i> Nueva Contraseña <span class="required">*</span></label>
+          <div class="password-input-wrapper">
+            <input [type]="mostrarPasswordCambio ? 'text' : 'password'" [(ngModel)]="cambiarPasswordForm.nuevaPassword" name="nuevaPassword" placeholder="Mínimo 8 caracteres">
+            <button type="button" class="btn-toggle-password" (click)="mostrarPasswordCambio = !mostrarPasswordCambio">
+              <i [class]="mostrarPasswordCambio ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="fas fa-check-circle"></i> Confirmar Contraseña <span class="required">*</span></label>
+          <div class="password-input-wrapper">
+            <input [type]="mostrarConfirmarCambio ? 'text' : 'password'" [(ngModel)]="cambiarPasswordForm.confirmarPassword" name="confirmarPassword" placeholder="Repita la contraseña">
+            <button type="button" class="btn-toggle-password" (click)="mostrarConfirmarCambio = !mostrarConfirmarCambio">
+              <i [class]="mostrarConfirmarCambio ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModalPassword()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn-primary" (click)="cambiarPassword()">
+        <i class="fas fa-save"></i> Cambiar Contraseña
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: ELIMINAR USUARIO
+     ============================================ -->
+<div class="modal-overlay" *ngIf="showModalEliminar" (click)="cerrarModalEliminar()">
+  <div class="modal-content modal-small" (click)="$event.stopPropagation()">
+    <div class="modal-header modal-header-danger">
+      <h2><i class="fas fa-exclamation-triangle"></i> Eliminar Usuario</h2>
+      <button class="btn-close" (click)="cerrarModalEliminar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="warning-box" *ngIf="usuarioSeleccionado">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>¿Está seguro de eliminar al usuario <strong>{{ usuarioSeleccionado.username }}</strong> ({{ usuarioSeleccionado.fullName }})? Esta acción no se puede deshacer.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModalEliminar()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn-danger" (click)="confirmarEliminar()">
+        <i class="fas fa-trash"></i> Eliminar Usuario
+      </button>
+    </div>
+  </div>
+</div>

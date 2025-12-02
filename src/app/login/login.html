@@ -1,0 +1,108 @@
+<div class="login-wrapper">
+  <!-- Overlay oscuro sobre el fondo -->
+  <div class="login-overlay"></div>
+  
+  <!-- Marca de agua GESTISEC -->
+  <div class="brand-watermark">
+    <h1>GESTISEC</h1>
+    <p>Sistema ITSE</p>
+  </div>
+
+  <!-- Card de Login con Glassmorphism -->
+  <div class="login-card-glass">
+    
+    <!-- Logo circular -->
+    <div class="logo-circle">
+      <img src="assets/defensa-civil-logo.png" alt="Defensa Civil" />
+    </div>
+
+    <!-- Título -->
+    <h2 class="login-title">Iniciar Sesión</h2>
+
+    <!-- Alerta de Error -->
+    <div *ngIf="error" class="error-alert">
+      <i class="fas fa-exclamation-triangle"></i>
+      {{ error }}
+    </div>
+
+    <!-- Formulario -->
+    <form (ngSubmit)="onLogin()" #loginForm="ngForm">
+      
+      <!-- Usuario -->
+      <div class="input-field">
+        <label>Usuario</label>
+        <input 
+          type="text" 
+          name="username" 
+          [(ngModel)]="username" 
+          placeholder="Ingrese su usuario"
+          required
+          autocomplete="username"
+        />
+      </div>
+
+      <!-- Contraseña -->
+      <div class="input-field">
+        <label>Contraseña</label>
+        <div class="password-wrapper">
+          <input 
+            [type]="showPassword ? 'text' : 'password'"
+            name="password" 
+            [(ngModel)]="password" 
+            placeholder="Ingrese su contraseña"
+            required
+            autocomplete="current-password"
+          />
+          <button 
+            type="button" 
+            class="eye-btn"
+            (click)="togglePassword()"
+            tabindex="-1"
+          >
+            <i [class]="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Rol -->
+      <div class="input-field">
+        <label>Rol</label>
+        <select 
+          name="role" 
+          [(ngModel)]="selectedRole" 
+          required
+        >
+          <option value="" disabled selected>Selecciona tu rol</option>
+          <option *ngFor="let role of roles" [value]="role">{{ role }}</option>
+        </select>
+      </div>
+
+      <!-- Recordar y Olvidé contraseña -->
+      <div class="options-row">
+        <label class="remember-check">
+          <input type="checkbox" [(ngModel)]="remember" name="remember" />
+          <span>Recordarme</span>
+        </label>
+        <a href="#" class="forgot-link" (click)="onForgotPassword($event)">
+          ¿Olvidaste tu contraseña?
+        </a>
+      </div>
+
+      <!-- Botón Login -->
+      <button 
+        type="submit" 
+        class="login-btn"
+        [disabled]="!username || !password || !selectedRole || loading"
+      >
+        <span *ngIf="!loading">Iniciar Sesión</span>
+        <div *ngIf="loading" class="spinner"></div>
+      </button>
+    </form>
+
+    <!-- Footer -->
+    <div class="login-footer-text">
+      <p>© 2025 Municipalidad de Huanchaco</p>
+      <a href="#" (click)="onHelp($event)">¿Necesitas ayuda?</a>
+    </div>
+  </div>
+</div>

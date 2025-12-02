@@ -1,0 +1,116 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║         CÓMO INSERTAR LAS 22 SOLICITUDES REALES                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+📋 PASOS A SEGUIR:
+
+PASO 1: LIMPIAR DATOS DE PRUEBA (SI AÚN NO LO HICISTE)
+   - Abre MySQL Workbench
+   - Ejecuta: LIMPIAR_TODO_EXCEPTO_USUARIOS.sql
+   - Verifica que las tablas estén vacías
+
+PASO 2: INSERTAR SOLICITUDES REALES
+   - Abre MySQL Workbench
+   - Archivo > Abrir SQL Script
+   - Selecciona: INSERTAR_SOLICITUDES_REALES_COMPLETO.sql
+   - Presiona F5 (Execute)
+
+PASO 3: VERIFICAR INSERCIÓN
+   El script mostrará automáticamente:
+   - ✅ 22 solicitudes insertadas
+   - Lista de expedientes
+   - Resumen por nivel de riesgo
+   - Total de registros en la base de datos
+
+═══════════════════════════════════════════════════════════════════
+
+📊 DATOS INSERTADOS:
+
+Total de Solicitudes: 22
+Creado por: ING. PERU LIBERTAD MENDEZ ALAYO
+Estado: FINALIZADO (todas)
+
+Desglose por Riesgo:
+- MUY ALTO: 6 solicitudes
+- ALTO: 9 solicitudes
+- MEDIO: 7 solicitudes
+
+═══════════════════════════════════════════════════════════════════
+
+✅ CAMPOS INCLUIDOS:
+
+- Datos del solicitante (nombres, DNI, correo, teléfono)
+- Tipo de trámite (ITSE NUEVO, ITSE RENOVACION)
+- Nivel de riesgo (MUY ALTO, ALTO, MEDIO)
+- Datos del establecimiento (razón social, RUC, nombre comercial)
+- Ubicación (dirección, distrito, provincia, departamento)
+- Características (área ocupada, número de pisos, aforo)
+- Estado: FINALIZADO
+- Creado por: ING. PERU LIBERTAD MENDEZ ALAYO
+
+═══════════════════════════════════════════════════════════════════
+
+🔄 DESPUÉS DE INSERTAR:
+
+1. REINICIAR EL BACKEND:
+   cd banckend
+   node index.js
+
+2. LIMPIAR NAVEGADOR:
+   F12 > Application > Clear Storage
+
+3. INICIAR SESIÓN:
+   Usuario: antonia (o cualquier usuario administrador)
+
+4. VERIFICAR EN EL SISTEMA:
+   - Ve a "Solicitudes"
+   - Deberías ver las 22 solicitudes
+   - Todas con estado "FINALIZADO"
+
+═══════════════════════════════════════════════════════════════════
+
+📝 SOLICITUDES INSERTADAS:
+
+1. MARKET LICORERIA LHUANA (014923-2025-01)
+2. MIFARMA (014919-2025-01)
+3. LA AMA - RESTAURANTE Y HOSPEDAJE (014682-2025-01)
+4. I.E.P. SAN MATEO (014634-2025-01)
+5. RESTAURANT POLLERIA MAREA ALTA (014499-2025-01)
+6. SEREVAL S.A.C. - INDUSTRIA (012127-2025-01)
+7. FRIOPACKING SA (14246-2025-01)
+8. EL ANZUELO SAC (14236-2025-01)
+9. IEP AMOR EN ACCION (14159-2025-01)
+10. RD DENTAL SAC (14099-2026-01)
+11. LA KHALETA DEL 8 (14072-2025-01)
+12. TALMA - OFICINA ADMINISTRATIVA (13975-2025-01)
+13. TALMA - ALMACEN (13975-2025-01)
+14. FARMACIA LA RIVERA (13859-2025-01)
+15. MANNUCCI MOTORS SAC (13690-2025-01)
+16. CHARPAS PERÚ S.A.C. (013083-2025-01)
+17. INARA - HOSPEDAJE (013167-2025-01)
+18. INVERSIONES AVÍCOLA GÉNESIS EIRL (013248-2025-01)
+19. R-PLUS EIRL (13292-2025-01)
+20. ATA - CENTRO DE REHABILITACIÓN (013483-2025-01)
+21. RESTAURANT BAR CARTAGENA (013455-2025-01)
+22. MEDICENTRO G&B MEDIC (13448-2025-01)
+
+═══════════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE:
+
+- El script está listo para ejecutar
+- NO necesitas modificar nada
+- Todos los datos ya están incluidos
+- El campo "creadoPor" está configurado como solicitaste
+
+═══════════════════════════════════════════════════════════════════
+
+✅ ¡TODO LISTO PARA EJECUTAR!
+
+
+
+
+
+
+
+

@@ -1,0 +1,83 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                CÓMO LIMPIAR LA BASE DE DATOS                      ║
+║           (Conservando Usuarios y Roles)                          ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+📋 PASO 1: ABRIR MYSQL WORKBENCH
+   - Abre MySQL Workbench
+   - Conéctate a: defensa_civil_bd
+
+📄 PASO 2: ABRIR EL SCRIPT
+   - Archivo > Abrir SQL Script
+   - Selecciona: LIMPIAR_TODO_EXCEPTO_USUARIOS.sql
+
+⚡ PASO 3: EJECUTAR
+   - Presiona F5 (o clic en el botón Execute ⚡)
+   - Espera unos segundos
+   - Verifica el mensaje: "✅ LIMPIEZA COMPLETADA EXITOSAMENTE"
+
+✅ PASO 4: VERIFICAR RESULTADO
+   El script mostrará automáticamente:
+   - ✅ Todas las tablas de datos limpias (0 registros)
+   - ✅ Usuarios conservados
+   - ✅ Roles conservados
+
+🔄 PASO 5: REINICIAR EL BACKEND
+   En la terminal:
+   - Detén el backend (Ctrl+C)
+   - cd banckend
+   - node index.js
+
+🌐 PASO 6: LIMPIAR EL NAVEGADOR
+   Presiona F12 y:
+   - Application > Storage > Clear Site Data
+   - Recarga la página (Ctrl+F5)
+
+📁 PASO 7: LIMPIAR FOTOS DE UPLOADS (Opcional)
+   En la terminal:
+   - cd banckend/uploads
+   - del *.jpg *.png *.jpeg
+
+🎯 PASO 8: ¡LISTO!
+   - Inicia sesión con tu usuario
+   - Comienza a ingresar datos reales
+
+═══════════════════════════════════════════════════════════════════
+
+⚠️ IMPORTANTE:
+- Este script NO elimina usuarios
+- Este script NO elimina roles
+- Este script NO elimina la estructura de tablas
+- Solo elimina los DATOS de prueba
+
+✅ SE CONSERVAN:
+   🔒 Usuarios (antonia, Vmanuel, carla, juan, RREYNA)
+   🔒 Roles (Administrador, Inspector, Administrativo)
+   🔒 Contraseñas (con bcrypt)
+
+❌ SE ELIMINAN:
+   🗑️ Solicitudes de prueba
+   🗑️ Locales registrados de prueba
+   🗑️ Reportes
+   🗑️ Fiscalizaciones
+   🗑️ Fotos del panel fotográfico
+   🗑️ Notificaciones
+   🗑️ Historial de cambios
+
+═══════════════════════════════════════════════════════════════════
+
+📞 ¿PROBLEMAS?
+   - Si hay error de "foreign key", el script lo maneja automáticamente
+   - Si los datos no se eliminan, verifica que estás en la BD correcta
+   - Si no puedes hacer login después, limpia localStorage del navegador
+
+═══════════════════════════════════════════════════════════════════
+
+
+
+
+
+
+
+
+

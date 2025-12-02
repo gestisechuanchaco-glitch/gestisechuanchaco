@@ -1,0 +1,24 @@
+# Dependencias
+node_modules/
+
+# Archivos subidos (ignorar contenido pero mantener carpeta)
+uploads/*
+!uploads/.gitkeep
+
+# Archivos de entorno
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos temporales
+*.tmp
+*.temp
+
+

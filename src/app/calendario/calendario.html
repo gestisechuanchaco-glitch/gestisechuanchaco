@@ -1,0 +1,308 @@
+<div class="calendario-container">
+  <!-- HEADER -->
+  <div class="calendario-header">
+    <div class="header-title">
+      <i class="fas fa-calendar-alt"></i>
+      <h2>Calendario y Agenda</h2>
+    </div>
+    
+    <!-- FILTROS -->
+    <div class="filtros-container">
+      <select [(ngModel)]="filtroTipo" class="filter-select" (change)="aplicarFiltros()">
+        <option value="todos">Todos los Eventos</option>
+        <option value="inspecciones">Inspecciones</option>
+        <option value="fiscalizaciones">Fiscalizaciones</option>
+        <option value="vencimientos">Vencimientos</option>
+        <option value="reinspecciones">Reinspecciones</option>
+        <option value="notificaciones">Notificaciones</option>
+        <option value="subsanaciones">Límites de Subsanación</option>
+      </select>
+      
+      <select [(ngModel)]="filtroInspector" class="filter-select" (change)="aplicarFiltros()">
+        <option value="">Todos los Inspectores</option>
+        <option *ngFor="let inspector of inspectores" [value]="inspector.id">
+          {{ inspector.nombres_completos || inspector.usuario }}
+        </option>
+      </select>
+      
+      <button class="btn-limpiar" (click)="limpiarFiltros()">
+        <i class="fas fa-redo"></i> Limpiar Filtros
+      </button>
+      
+      <button class="btn-disponibilidad" (click)="abrirVistaDisponibilidad()">
+        <i class="fas fa-user-check"></i> Ver Disponibilidad
+      </button>
+    </div>
+  </div>
+
+  <!-- LEYENDA -->
+  <div class="leyenda-container">
+    <div class="leyenda-item">
+      <span class="leyenda-color" style="background-color: #3B82F6;"></span>
+      <span>Inspecciones</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color" style="background-color: #F59E0B;"></span>
+      <span>Fiscalizaciones Programadas</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color" style="background-color: #EF4444;"></span>
+      <span>Vencimientos / Urgentes</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color" style="background-color: #10B981;"></span>
+      <span>Completadas</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color" style="background-color: #EC4899;"></span>
+      <span>Reinspecciones</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color" style="background-color: #8B5CF6;"></span>
+      <span>Notificaciones</span>
+    </div>
+    <div class="leyenda-item">
+      <span class="leyenda-color" style="background-color: #10B981;"></span>
+      <span>Límites Subsanación</span>
+    </div>
+  </div>
+
+  <!-- CALENDARIO -->
+  <div class="calendar-wrapper">
+    <full-calendar [options]="calendarOptions"></full-calendar>
+  </div>
+
+  <!-- MODAL DETALLE EVENTO -->
+  <div *ngIf="mostrarModalDetalle && eventoSeleccionado" class="modal-overlay" (click)="cerrarModalDetalle()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          <span *ngIf="eventoSeleccionado.extendedProps?.tipo === 'inspeccion' && eventoSeleccionado.extendedProps?.razon_social">
+            Inspección: {{ eventoSeleccionado.extendedProps?.razon_social }}
+          </span>
+          <span *ngIf="eventoSeleccionado.extendedProps?.tipo === 'inspeccion' && !eventoSeleccionado.extendedProps?.razon_social">
+            {{ eventoSeleccionado.title }}
+          </span>
+          <span *ngIf="eventoSeleccionado.extendedProps?.tipo !== 'inspeccion'">
+            {{ eventoSeleccionado.title }}
+          </span>
+        </h3>
+        <button class="btn-cerrar" (click)="cerrarModalDetalle()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="detalle-item">
+          <strong><i class="fas fa-calendar"></i> Fecha:</strong>
+          <span>{{ formatearFecha(eventoSeleccionado.start) }}</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.tipo" class="detalle-item">
+          <strong><i class="fas fa-tag"></i> Tipo:</strong>
+          <span class="badge-tipo">{{ eventoSeleccionado.extendedProps?.tipo | titlecase }}</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.estado" class="detalle-item">
+          <strong><i class="fas fa-info-circle"></i> Estado:</strong>
+          <span class="badge-estado">{{ eventoSeleccionado.extendedProps?.estado }}</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.inspector" class="detalle-item">
+          <strong><i class="fas fa-user"></i> Inspector:</strong>
+          <span>{{ eventoSeleccionado.extendedProps?.inspector }}</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.razon_social && eventoSeleccionado.extendedProps?.tipo === 'inspeccion'" class="detalle-item">
+          <strong><i class="fas fa-building"></i> Razón Social:</strong>
+          <span>{{ eventoSeleccionado.extendedProps?.razon_social }}</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.expediente" class="detalle-item">
+          <strong><i class="fas fa-file-alt"></i> Expediente:</strong>
+          <span>{{ eventoSeleccionado.extendedProps?.expediente }}</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.direccion" class="detalle-item">
+          <strong><i class="fas fa-map-marker-alt"></i> Dirección:</strong>
+          <span>{{ eventoSeleccionado.extendedProps?.direccion }}</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.descripcion" class="detalle-item">
+          <strong><i class="fas fa-align-left"></i> Descripción:</strong>
+          <p>{{ eventoSeleccionado.extendedProps?.descripcion }}</p>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.dias_restantes !== undefined" class="detalle-item alerta-urgente">
+          <strong><i class="fas fa-exclamation-triangle"></i> Días Restantes:</strong>
+          <span class="badge-urgente" 
+                [class.urgente]="(eventoSeleccionado.extendedProps?.dias_restantes ?? 0) <= 3"
+                [class.proximo]="(eventoSeleccionado.extendedProps?.dias_restantes ?? 0) <= 7 && (eventoSeleccionado.extendedProps?.dias_restantes ?? 0) > 3">
+            {{ eventoSeleccionado.extendedProps?.dias_restantes }} días
+          </span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.plazo_subsanacion" class="detalle-item">
+          <strong><i class="fas fa-calendar-day"></i> Plazo de Subsanación:</strong>
+          <span>{{ eventoSeleccionado.extendedProps?.plazo_subsanacion }} días</span>
+        </div>
+        
+        <div *ngIf="eventoSeleccionado.extendedProps?.gravedad" class="detalle-item">
+          <strong><i class="fas fa-exclamation-circle"></i> Gravedad:</strong>
+          <span class="badge-gravedad" [class.grave]="eventoSeleccionado.extendedProps?.gravedad === 'Muy Grave'"
+                [class.media]="eventoSeleccionado.extendedProps?.gravedad === 'Grave'">
+            {{ eventoSeleccionado.extendedProps?.gravedad }}
+          </span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarModalDetalle()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CREAR EVENTO DESDE CALENDARIO -->
+  <div *ngIf="mostrarModalCrearEvento" class="modal-overlay" (click)="cerrarModalCrearEvento()">
+    <div class="modal-content modal-crear-evento" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fas fa-plus-circle"></i> Crear Nuevo Evento</h3>
+        <button class="btn-cerrar" (click)="cerrarModalCrearEvento()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="info-fecha">
+          <i class="fas fa-calendar"></i>
+          <strong>Fecha seleccionada:</strong> {{ formatearFecha(fechaSeleccionada) }}
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-tag"></i> Tipo de Evento:</label>
+          <select [(ngModel)]="nuevoEvento.tipo" class="form-input">
+            <option value="inspeccion">Inspección (ITSE/ECSE)</option>
+            <option value="fiscalizacion">Fiscalización</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-clock"></i> Hora:</label>
+          <input type="time" [(ngModel)]="nuevoEvento.hora" class="form-input" value="09:00">
+        </div>
+        
+        <div class="form-group">
+          <label><i class="fas fa-user"></i> Inspector (Opcional):</label>
+          <select [(ngModel)]="nuevoEvento.inspector_id" class="form-input">
+            <option [value]="null">Sin asignar</option>
+            <option *ngFor="let inspector of inspectores" [value]="inspector.id">
+              {{ inspector.nombres_completos || inspector.usuario }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="info-ayuda">
+          <i class="fas fa-info-circle"></i>
+          <p>Se abrirá el formulario correspondiente con la fecha y hora prellenadas.</p>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-primary" (click)="crearEventoDesdeCalendario()">
+          <i class="fas fa-arrow-right"></i> Continuar
+        </button>
+        <button class="btn-secondary" (click)="cerrarModalCrearEvento()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VISTA DE DISPONIBILIDAD -->
+  <div *ngIf="mostrarVistaDisponibilidad" class="modal-overlay" (click)="cerrarVistaDisponibilidad()">
+    <div class="modal-content modal-disponibilidad" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><i class="fas fa-user-check"></i> Disponibilidad de Inspectores</h3>
+        <button class="btn-cerrar" (click)="cerrarVistaDisponibilidad()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="fecha-consulta">
+          <label><i class="fas fa-calendar-alt"></i> Consultar disponibilidad para:</label>
+          <input 
+            type="date" 
+            [(ngModel)]="fechaConsultaDisponibilidad" 
+            class="form-input"
+            (change)="consultarDisponibilidad()"
+          >
+          <button class="btn-consultar" (click)="consultarDisponibilidad()">
+            <i class="fas fa-search"></i> Consultar
+          </button>
+        </div>
+        
+        <div *ngIf="cargandoDisponibilidad" class="loading">
+          <i class="fas fa-spinner fa-spin"></i> Cargando disponibilidad...
+        </div>
+        
+        <div *ngIf="!cargandoDisponibilidad && disponibilidadInspectores.length > 0" class="lista-disponibilidad">
+          <div 
+            *ngFor="let inspector of disponibilidadInspectores" 
+            class="inspector-item"
+            [class]="getDisponibilidadClase(inspector)"
+          >
+            <div class="inspector-header">
+              <div class="inspector-avatar">
+                {{ (inspector.nombres_completos || inspector.usuario || 'I').charAt(0).toUpperCase() }}
+              </div>
+              <div class="inspector-info">
+                <strong>{{ inspector.nombres_completos || inspector.usuario }}</strong>
+                <span class="inspector-usuario">@{{ inspector.usuario }}</span>
+              </div>
+              <div class="inspector-estado" [class]="getDisponibilidadClase(inspector)">
+                <i class="fas" 
+                   [class.fa-check-circle]="inspector.disponible"
+                   [class.fa-exclamation-triangle]="inspector.carga_alta"
+                   [class.fa-times-circle]="!inspector.disponible && !inspector.carga_alta">
+                </i>
+                {{ getDisponibilidadTexto(inspector) }}
+              </div>
+            </div>
+            
+            <div *ngIf="inspector.eventos && inspector.eventos.length > 0" class="inspector-eventos">
+              <strong>Eventos asignados:</strong>
+              <ul>
+                <li *ngFor="let evento of inspector.eventos">
+                  <i class="fas" 
+                     [class.fa-clipboard-check]="evento.tipo === 'inspeccion'"
+                     [class.fa-clipboard-list]="evento.tipo === 'fiscalizacion'">
+                  </i>
+                  {{ evento.titulo }} - {{ evento.hora || 'Sin hora' }}
+                </li>
+              </ul>
+            </div>
+            
+            <div *ngIf="inspector.eventos_count === 0" class="inspector-libre">
+              <i class="fas fa-check"></i> Sin eventos asignados - Totalmente disponible
+            </div>
+          </div>
+        </div>
+        
+        <div *ngIf="!cargandoDisponibilidad && disponibilidadInspectores.length === 0" class="sin-datos">
+          <i class="fas fa-info-circle"></i>
+          <p>No hay inspectores disponibles o no hay datos para esta fecha.</p>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="cerrarVistaDisponibilidad()">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

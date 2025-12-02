@@ -1,0 +1,288 @@
+<div class="reportes-container">
+  <!-- ⭐ HEADER PROFESIONAL -->
+  <div class="reportes-header">
+    <div class="header-title">
+      <i class="fas fa-file-alt"></i>
+      <h2>INFORMES REALIZADOS PARA LAS INSPECCIONES</h2>
+    </div>
+    
+    <div class="header-filters">
+      <button class="btn-exportar" (click)="exportarExcel()">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+      </button>
+      <button class="btn-exportar" (click)="cargarInformes()">
+        <i class="fas fa-sync-alt"></i> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- ⭐ TABLA -->
+  <div class="tabla-wrapper">
+    <table class="reportes-table">
+      <thead>
+        <tr>
+          <th>N° EXPEDIENTE</th>
+          <th>FECHA DE INSPECCIÓN</th>
+          <th>ESTADO</th>
+          <th style="width: 300px;">ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let informe of informes" class="tabla-row">
+          <td><strong>{{ informe.numerodeexpediente }}</strong></td>
+          <td>{{ informe.fecha | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <span class="badge badge-rojo" *ngIf="informe.estado === 'OBSERVADO'">
+              OBSERVADO
+            </span>
+            <span class="badge badge-verde" *ngIf="informe.estado === 'ACEPTADO' || informe.estado === 'FINALIZADO'">
+              ACEPTADO
+            </span>
+          </td>
+          <td>
+            <div class="acciones-grupo">
+              <button class="btn-estado btn-observado" (click)="marcarObservado(informe)" title="Marcar como Observado">
+                Observado
+              </button>
+              <button class="btn-estado btn-aceptado" (click)="marcarAceptado(informe)" title="Marcar como Aceptado">
+                Aceptado
+              </button>
+              <button class="btn-ver" (click)="verDetalle(informe)" title="Ver Detalle">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+            
+            <!-- Botón para levantar observación (solo si está observado) -->
+            <button 
+              *ngIf="informe.estado === 'OBSERVADO'" 
+              class="btn-levantar-observacion" 
+              (click)="abrirPanelFotografico(informe)">
+              Subir nuevo panel fotográfico para levantar la observación
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="!cargando && (!informes || informes.length === 0)">
+          <td colspan="4" class="sin-datos">
+            <i class="fas fa-inbox"></i>
+            <p>No hay informes registrados para mostrar</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ==================== MODAL VER DETALLE (SIN CAMBIOS) ==================== -->
+<div *ngIf="mostrarModal" class="modal-overlay">
+  <div class="modal-content ficha-modal panel-fotografico-formal">
+    <!-- ENCABEZADO OFICIAL -->
+    <div class="panel-encabezado">
+      <div class="encabezado-titulo">
+        <h2>ANEXO 18</h2>
+        <h3>PANEL FOTOGRÁFICO PARA ITSE</h3>
+      </div>
+      <button class="close-btn-formal" (click)="cerrarModal()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-scroll" *ngIf="informeSeleccionado">
+      <!-- DATOS OFICIALES ANEXO 18 -->
+      <div class="datos-oficiales-tabla">
+        <table class="tabla-datos-oficiales">
+          <tbody>
+            <tr>
+              <td class="celda-numero">1</td>
+              <td class="celda-contenido">
+                <span class="label-dato">MUNICIPALIDAD DISTRITAL DE:</span>
+                <span class="valor-dato">HUANCHACO</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="celda-numero">2</td>
+              <td class="celda-contenido">
+                <span class="label-dato">ÓRGANO EJECUTANTE:</span>
+                <span class="valor-dato">MUNICIPALIDAD DISTRITAL DE HUANCHACO</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="celda-numero">3</td>
+              <td class="celda-contenido">
+                <span class="label-dato">ITSE:</span>
+                <span class="valor-dato">{{ informeSeleccionado?.riesgo_incendio || 'RIESGO MUY ALTO' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="celda-numero">4</td>
+              <td class="celda-contenido">
+                <span class="label-dato">EXP. N°:</span>
+                <span class="valor-dato">{{ informeSeleccionado?.numerodeexpediente || 'SIN DATO' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="celda-numero">5</td>
+              <td class="celda-contenido">
+                <span class="label-dato">NOMBRE COMERCIAL:</span>
+                <span class="valor-dato">{{ informeSeleccionado?.nombre_comercial || 'SIN DATO' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="celda-numero">6</td>
+              <td class="celda-contenido">
+                <span class="label-dato">INSPECTOR:</span>
+                <span class="valor-dato">{{ informeSeleccionado?.inspector_asignado || 'SIN DATO' }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="celda-numero">7</td>
+              <td class="celda-contenido">
+                <span class="label-dato">FECHA:</span>
+                <span class="valor-dato">{{ informeSeleccionado?.fecha | date:'dd/MM/yyyy' }}</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Panel fotográfico - TABLA PARA IMPRESIÓN (ANEXO 18) -->
+      <div class="tabla-panel-formal">
+        <table class="tabla-impresion" *ngIf="panelFotograficoSeleccionado && panelFotograficoSeleccionado.length > 0">
+          <thead>
+            <tr>
+              <th style="width: 40%;">PANEL FOTOGRÁFICO</th>
+              <th style="width: 45%;">BREVE DESCRIPCIÓN</th>
+              <th style="width: 15%;">SI CUMPLE</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Una fila por cada foto -->
+            <tr *ngFor="let foto of panelFotograficoSeleccionado; let i = index">
+              <td class="celda-foto">
+                <img *ngIf="foto.imagen_url" [src]="foto.imagen_url" alt="Foto {{i+1}}" class="foto-tabla-impresion" />
+              </td>
+              <td class="celda-descripcion">
+                {{ foto.descripcion || 'Sin descripción' }}
+              </td>
+              <td class="celda-cumple">
+                <div class="cumplimiento-valor">
+                  <span *ngIf="foto.cumple === 1 || foto.cumple === '1' || foto.cumple === 'Si' || foto.cumple === 'SI' || foto.cumple === 'si'" class="cumple-si">SÍ ✓</span>
+                  <span *ngIf="foto.cumple === 0 || foto.cumple === '0' || foto.cumple === 'No' || foto.cumple === 'NO' || foto.cumple === 'no'" class="cumple-no">NO ✗</span>
+                  <span *ngIf="foto.cumple !== 1 && foto.cumple !== '1' && foto.cumple !== 'Si' && foto.cumple !== 'SI' && foto.cumple !== 'si' && foto.cumple !== 0 && foto.cumple !== '0' && foto.cumple !== 'No' && foto.cumple !== 'NO' && foto.cumple !== 'no'">-</span>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TABLA PARA PANTALLA (VISTA NORMAL) -->
+      <div class="tabla-panel-formal">
+        <h4 style="margin-top:24px;">PANEL FOTOGRÁFICO</h4>
+        <table class="tabla-panel" *ngIf="panelFotograficoSeleccionado && panelFotograficoSeleccionado.length > 0">
+          <thead>
+            <tr>
+              <th>FOTO</th>
+              <th>BREVE DESCRIPCIÓN</th>
+              <th>CUMPLE</th>
+              <th>FECHA</th>
+              <th>ACCIÓN</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let foto of panelFotograficoSeleccionado">
+              <td>
+                <img 
+                  *ngIf="foto.imagen_url" 
+                  [src]="foto.imagen_url" 
+                  alt="Foto panel" 
+                  style="width:80px; height:60px; object-fit:cover; border-radius:6px;">
+                <span *ngIf="!foto.imagen_url" style="color:#999;">Sin imagen</span>
+              </td>
+              <td>{{ foto.descripcion || 'Sin descripción' }}</td>
+              <td style="text-align:center;">
+                <span *ngIf="foto.cumple === 1 || foto.cumple === '1' || foto.cumple === true || foto.cumple === 'Si' || foto.cumple === 'SI' || foto.cumple === 'si'" style="color:#27ae60; font-weight:bold;">SÍ</span>
+                <span *ngIf="foto.cumple === 0 || foto.cumple === '0' || foto.cumple === false || foto.cumple === 'No' || foto.cumple === 'NO' || foto.cumple === 'no'" style="color:#e74c3c; font-weight:bold;">NO</span>
+                <span *ngIf="foto.cumple !== 1 && foto.cumple !== '1' && foto.cumple !== true && foto.cumple !== 'Si' && foto.cumple !== 'SI' && foto.cumple !== 'si' && foto.cumple !== 0 && foto.cumple !== '0' && foto.cumple !== false && foto.cumple !== 'No' && foto.cumple !== 'NO' && foto.cumple !== 'no'" style="color:#999;">-</span>
+              </td>
+              <td>{{ foto.fecha_creacion | date:'dd/MM/yyyy' }}</td>
+              <td>
+                <button class="btn-ver" (click)="verFotoCompleta(foto)">Ver</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="!panelFotograficoSeleccionado || panelFotograficoSeleccionado.length === 0" style="color:#888; text-align:center; margin:16px 0;">
+          No se ha subido panel fotográfico aún.
+        </p>
+      </div>
+    </div>
+
+    <div class="ficha-footer">
+      <button class="btn-imprimir" (click)="imprimirInforme()" title="Imprimir informe">
+        <i class="fas fa-print"></i> Imprimir
+      </button>
+      <button class="cerrar-modal-btn" (click)="cerrarModal()">
+        Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODAL PANEL FOTOGRÁFICO (SIN CAMBIOS) ==================== -->
+<div *ngIf="mostrarModalPanel || modalPanelFotograficoVisible" class="modal-overlay-panel">
+  <div class="modal-panel">
+    <div class="modal-panel-header">
+      <h3>📸 Panel Fotográfico - Levantar Observación</h3>
+      <button class="close-panel-btn" (click)="cerrarModalPanel()">✕</button>
+    </div>
+
+    <div class="modal-panel-body">
+      <table class="tabla-panel-input">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Breve Descripción</th>
+            <th>¿Cumple?</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let fila of filasPanelNuevo; let i = index">
+            <td>
+              <input type="file" accept="image/*" (change)="onSelectFoto($event, i)" style="display:none;" #fileInput>
+              <button class="btn-seleccionar-foto" (click)="fileInput.click()">
+                Seleccionar foto
+              </button>
+              <small *ngIf="fila.nombreArchivo" style="display:block; margin-top:6px; color:#555;">
+                {{ fila.nombreArchivo }}
+              </small>
+            </td>
+            <td>
+              <textarea [(ngModel)]="fila.descripcion" placeholder="Breve descripción..." rows="3"></textarea>
+            </td>
+            <td>
+              <label><input type="radio" [(ngModel)]="fila.cumple" [value]="true"> Sí</label>
+              <label><input type="radio" [(ngModel)]="fila.cumple" [value]="false"> No</label>
+            </td>
+            <td>
+              <button class="eliminar-btn" (click)="eliminarFilaPanel(i)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <button class="agregar-fila-btn" (click)="agregarFilaPanel()">
+        + Agregar fila
+      </button>
+    </div>
+
+    <div class="modal-panel-footer">
+      <button class="cerrar-btn" (click)="cerrarModalPanel()">Cerrar</button>
+      <button class="guardar-panel-btn" (click)="guardarPanel()">
+        Guardar Panel Fotográfico
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,587 @@
+<div class="solicitudes-container">
+  <!-- HEADER -->
+  <div class="solicitudes-header">
+    <h1><i class="fas fa-file-invoice"></i> REGISTRO PARA LICENCIAS ITSE</h1>
+  </div>
+
+  <!-- FORMULARIO -->
+  <form class="formulario" autocomplete="off" (ngSubmit)="onSubmit()">
+
+    <!-- Página 1 -->
+    <div *ngIf="paginaActual === 1" class="pagina activa" id="pagina1">
+      <div class="seccion-titulo"><i class="fas fa-user"></i> I. DATOS DEL SOLICITANTE</div>
+
+      <div class="checkbox-row">
+        <label><input type="radio" name="rol" [(ngModel)]="rolSeleccionado" value="propietario"> PROPIETARIO</label>
+        <label><input type="radio" name="rol" [(ngModel)]="rolSeleccionado" value="representante"> REPRESENTANTE LEGAL</label>
+        <label><input type="radio" name="rol" [(ngModel)]="rolSeleccionado" value="conductor"> CONDUCTOR / ADMINISTRADOR</label>
+        <label><input type="radio" name="rol" [(ngModel)]="rolSeleccionado" value="organizador"> ORGANIZADOR / PROMOTOR</label>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="nombres_apellidos">NOMBRES Y APELLIDOS:</label>
+          <input type="text" id="nombres_apellidos" name="nombres_apellidos" [(ngModel)]="nombres_apellidos" />
+        </div>
+
+        <div class="form-group dni-buscar-group">
+          <label for="dni_ce">DNI (8 dígitos):</label>
+          <div class="dni-input-group">
+            <input
+              type="text"
+              id="dni_ce"
+              name="dni_ce"
+              [(ngModel)]="dni_ce"
+              maxlength="8"
+              pattern="\\d{8}"
+              inputmode="numeric"
+            />
+            <button type="button" class="btn-buscar" (click)="consultarReniecPorDni()">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label for="domicilio">DOMICILIO:</label>
+          <input type="text" id="domicilio" name="domicilio" [(ngModel)]="domicilio" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="correo">CORREO ELECTRÓNICO:</label>
+          <input type="email" id="correo" name="correo" [(ngModel)]="correo" />
+        </div>
+        <div class="form-group">
+          <label for="telefonos">TELÉFONO (9 dígitos):</label>
+          <input
+            type="text"
+            id="telefonos"
+            name="telefonos"
+            [(ngModel)]="telefonos"
+            maxlength="9"
+            pattern="\\d{9}"
+            inputmode="numeric"
+            onkeypress="return event.charCode>=48 && event.charCode<=57"
+          />
+        </div>
+      </div>
+
+      <!-- Consentimiento de notificación por WhatsApp -->
+      <div class="form-row">
+        <div class="form-group" style="flex: 1; display:flex; align-items:center; gap:8px;">
+          <input type="checkbox" id="whatsappConsent" name="whatsappConsent" [(ngModel)]="whatsappConsent" />
+          <label for="whatsappConsent" style="margin:0; cursor:pointer;">
+            Acepto recibir notificaciones del estado de mi solicitud por WhatsApp al número indicado
+          </label>
+        </div>
+      </div>
+
+      <!-- Configuración de WhatsApp: número alterno y selección de destino -->
+      <div class="form-row" *ngIf="whatsappConsent">
+        <div class="form-group" style="flex: 1;">
+          <label for="whatsappAlternate">Número alterno de WhatsApp (opcional):</label>
+          <input
+            type="text"
+            id="whatsappAlternate"
+            name="whatsappAlternate"
+            [(ngModel)]="whatsappAlternate"
+            maxlength="9"
+            pattern="\\d{9}"
+            inputmode="numeric"
+            placeholder="Ej.: 9XXXXXXXX"
+            onkeypress="return event.charCode>=48 && event.charCode<=57"
+          />
+          <small class="help-block">Debe tener 9 dígitos</small>
+        </div>
+      </div>
+
+      <div class="form-row" *ngIf="whatsappConsent">
+        <div class="form-group" style="flex: 1;">
+          <label><b>¿A qué número deseas que se envíen las notificaciones?</b></label>
+          <div class="checkbox-row" style="gap:16px;">
+            <label style="display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="whatsappUse" [(ngModel)]="whatsappUse" value="solicitante" />
+              Usar teléfono del solicitante ({{ telefonos || 'sin número' }})
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;">
+              <input type="radio" name="whatsappUse" [(ngModel)]="whatsappUse" value="alterno" />
+              Usar número alterno ({{ whatsappAlternate || 'sin alterno' }})
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="error" *ngIf="errorPagina1">{{ errorPagina1 }}</div>
+
+      <div class="botones">
+        <button type="button" (click)="siguientePagina()">Siguiente »</button>
+      </div>
+    </div>
+
+    <!-- Página 2 -->
+    <div *ngIf="paginaActual === 2" class="pagina activa" id="pagina2">
+      <div class="seccion-titulo"><i class="fas fa-building"></i> II. DATOS ADMINISTRATIVOS DEL ESTABLECIMIENTO</div>
+
+      <div class="form-row">
+        <div class="form-group" style="max-width:340px;">
+          <label for="tipoTramite">Tipo de trámite a realizar:</label>
+          <select id="tipoTramite" name="tipoTramite" [(ngModel)]="tipoTramite">
+            <option value="">-- Selecciona --</option>
+            <option value="itse">Certificado ITSE</option>
+            <option value="ecse">Certificado ECSE</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="tipoTramite==='itse'">
+          <label for="tipoItse">Modalidad ITSE:</label>
+          <select id="tipoItse" [(ngModel)]="tipoItse" name="tipoItse">
+            <option value="">-- Selecciona --</option>
+            <option value="nuevo">Nuevo</option>
+            <option value="renovacion">Renovación</option>
+          </select>
+        </div>
+
+        <div class="form-group" *ngIf="tipoTramite==='ecse'">
+          <label for="tipoEcse">Modalidad ECSE:</label>
+          <select id="tipoEcse" [(ngModel)]="tipoEcse" name="tipoEcse">
+            <option value="">-- Selecciona --</option>
+            <option value="hasta3000">Hasta 3000 personas</option>
+            <option value="mayor3000">Mayor a 3000 personas</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Buscar solicitud anterior para renovación -->
+      <div class="form-row" *ngIf="tipoTramite==='itse' && tipoItse==='renovacion'">
+        <div class="form-group" style="flex:2;">
+          <label>🔍 Buscar solicitud anterior para renovar:</label>
+          <div class="buscar-solicitud-group">
+            <input 
+              type="text" 
+              [(ngModel)]="busquedaRenovacion" 
+              name="busquedaRenovacion"
+              placeholder="Buscar por Razón Social o N° Expediente"
+              (input)="buscarSolicitudesAnteriores()"
+            />
+            <button type="button" class="btn-limpiar" (click)="limpiarBusqueda()" *ngIf="solicitudSeleccionadaRenovacion">
+              <i class="fas fa-times"></i> Empezar desde cero
+            </button>
+          </div>
+          
+          <!-- Resultados de búsqueda -->
+          <div class="resultados-busqueda" *ngIf="solicitudesEncontradas.length > 0 && !solicitudSeleccionadaRenovacion">
+            <div 
+              class="resultado-item" 
+              *ngFor="let sol of solicitudesEncontradas"
+              (click)="seleccionarSolicitudRenovacion(sol)"
+            >
+              <div class="resultado-principal">
+                <strong>{{ sol.razon_social }}</strong>
+              </div>
+              <div class="resultado-secundario">
+                Expediente: {{ sol.numerodeexpediente }} | RUC: {{ sol.ruc }}
+              </div>
+            </div>
+          </div>
+          
+          <!-- Solicitud seleccionada -->
+          <div class="solicitud-seleccionada" *ngIf="solicitudSeleccionadaRenovacion">
+            <i class="fas fa-check-circle"></i>
+            <span>
+              <strong>{{ solicitudSeleccionadaRenovacion.razon_social }}</strong>
+              (Expediente: {{ solicitudSeleccionadaRenovacion.numerodeexpediente }})
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>RAZÓN SOCIAL:</label>
+          <input type="text" name="razon_social" [(ngModel)]="razon_social" />
+        </div>
+        <div class="form-group ruc-buscar-group">
+          <label>RUC N°:</label>
+          <div class="ruc-input-group">
+            <input
+              type="text"
+              name="ruc"
+              [(ngModel)]="ruc"
+              maxlength="11"
+              pattern="\\d{11}"
+              inputmode="numeric"
+            />
+            <button type="button" class="btn-buscar" (click)="consultarSunatPorRuc()">
+              Buscar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>NOMBRE COMERCIAL:</label>
+          <input type="text" name="nombre_comercial" [(ngModel)]="nombre_comercial" />
+        </div>
+        <div class="form-group">
+          <label>TELÉFONOS ESTABLECIMIENTO:</label>
+          <input
+            type="text"
+            name="telefonos_establecimiento"
+            [(ngModel)]="telefonos_establecimiento"
+            maxlength="9"
+            pattern="\\d{9}"
+            inputmode="numeric"
+            onkeypress="return event.charCode>=48 && event.charCode<=57"
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label>DIRECCIÓN / UBICACIÓN:</label>
+          <input type="text" name="direccion" [(ngModel)]="direccion" />
+        </div>
+        <div class="form-group">
+          <button type="button" class="btn-mapa" (click)="abrirModalMapa()">
+            <i class="fas fa-map-marker-alt"></i> Ingresar Dirección Exacta
+          </button>
+        </div>
+      </div>
+
+      <!-- Mostrar coordenadas si ya fueron capturadas -->
+      <div class="form-row" *ngIf="latitud && longitud">
+        <div class="coordenadas-box">
+          <i class="fas fa-check-circle"></i> 
+          <span>Ubicación guardada: Lat {{ latitud | number:'1.6-6' }}, Lng {{ longitud | number:'1.6-6' }}</span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>REFERENCIA DE DIRECCIÓN:</label>
+          <input type="text" name="referencia" [(ngModel)]="referencia" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>LOCALIDAD:</label>
+          <select name="localidad" [(ngModel)]="localidad">
+            <option value="">-- Selecciona --</option>
+            <option *ngFor="let l of localidades" [value]="l">{{ l }}</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>DISTRITO:</label>
+          <input type="text" name="distrito" [(ngModel)]="distrito" readonly />
+        </div>
+        <div class="form-group">
+          <label>PROVINCIA:</label>
+          <input type="text" name="provincia" [(ngModel)]="provincia" readonly />
+        </div>
+        <div class="form-group">
+          <label>DEPARTAMENTO:</label>
+          <input type="text" name="departamento" [(ngModel)]="departamento" readonly />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>HORARIO DE ATENCIÓN:</label>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="time" [(ngModel)]="horaApertura" name="horaApertura" required />
+            <span>a</span>
+            <input type="time" [(ngModel)]="horaCierre" name="horaCierre" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="error" *ngIf="errorPagina2">{{ errorPagina2 }}</div>
+
+      <div class="botones">
+        <button type="button" class="secondary" (click)="anteriorPagina()">« Anterior</button>
+        <button type="button" (click)="siguientePagina()">Siguiente »</button>
+      </div>
+    </div>
+
+    <!-- Página 3 -->
+    <div *ngIf="paginaActual === 3" class="pagina activa" id="pagina3">
+      <div class="seccion-titulo"><i class="fas fa-wrench"></i> III. DATOS TÉCNICOS DEL ESTABLECIMIENTO</div>
+
+      <!-- Giro + Actividad específica + Área ocupada -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>GIRO O ACTIVIDADES QUE REALIZA:</label>
+          <select name="giro_actividades" [(ngModel)]="giroSeleccionado">
+            <option *ngFor="let g of giros" [value]="g.value">{{ g.label }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>ACTIVIDAD ESPECÍFICA:</label>
+          <input
+            type="text"
+            name="actividad_especifica"
+            [(ngModel)]="actividadEspecifica"
+            placeholder="Ej.: Restaurante, Librería, Hospedaje"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>ÁREA OCUPADA TOTAL (m²):</label>
+          <input type="number" name="area_ocupada" [(ngModel)]="areaOcupada" min="0" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>NÚMERO DE PISOS DE LA EDIFICACIÓN:</label>
+          <input type="number" name="num_pisos" [(ngModel)]="numPisos" (change)="onNumPisosChange()" min="1" />
+        </div>
+        <div class="form-group">
+          <label>PISO DONDE SE UBICA EL ESTABLECIMIENTO OBJETO DE INSPECCIÓN:</label>
+          <input
+            type="text"
+            name="piso_ubicado"
+            [(ngModel)]="pisoUbicado"
+            (change)="onPisoUbicadoChange()"
+            placeholder="Ej.: 1,2,3"
+          />
+          <small class="help-block">Ejemplo: 1,2,3</small>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>ÁREA DEL TERRENO (m²):</label>
+          <input type="number" name="area_terreno" [(ngModel)]="areaTerreno" min="0" />
+        </div>
+
+        <div class="form-group" style="flex:2;">
+          <label><b>ÁREA TECHADA POR NIVEL:</b></label>
+          <div *ngIf="pisosUbicados && pisosUbicados.length > 0">
+            <div
+              *ngFor="let piso of pisosUbicados; let i = index"
+              style="display:flex;align-items:center;gap:6px;margin-bottom:4px;"
+            >
+              <label style="min-width:60px;">Piso {{ piso }}:</label>
+              <input
+                type="number"
+                [(ngModel)]="areasTechadasPorNivel[i]"
+                (input)="onAreaTechadaChange()"
+                [name]="'areaTechadaPorNivel' + piso"
+                min="0"
+                style="width:100px;"
+              />
+              <span>m²</span>
+            </div>
+            <div style="margin-top:8px;"><b>Total techada:</b> {{ totalAreaTechada }} m²</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>ÁREA LIBRE (m²):</label>
+          <input type="number" name="area_libre" [(ngModel)]="areaLibre" min="0" />
+        </div>
+      </div>
+
+      <!-- Antigüedades -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>ANTIGÜEDAD DE LA EDIFICACIÓN (años):</label>
+          <input
+            type="number"
+            name="antiguedad_edificacion"
+            [(ngModel)]="antiguedadEdificacion"
+            min="0"
+            max="200"
+            step="1"
+            inputmode="numeric"
+            (ngModelChange)="onAntiguedadChange('edificacion', $event)"
+          />
+          <small class="help-block">0 a 200 años</small>
+        </div>
+
+        <div class="form-group">
+          <label>ANTIGÜEDAD DE LA ACTIVIDAD COMERCIAL (años):</label>
+          <input
+            type="number"
+            name="antiguedad_actividad"
+            [(ngModel)]="antiguedadActividad"
+            min="0"
+            max="100"
+            step="1"
+            inputmode="numeric"
+            (ngModelChange)="onAntiguedadChange('actividad', $event)"
+          />
+          <small class="help-block">0 a 100 años</small>
+        </div>
+      </div>
+
+      <div class="error" *ngIf="errorPagina3">{{ errorPagina3 }}</div>
+
+      <div class="botones">
+        <button type="button" class="secondary" (click)="anteriorPagina()">« Anterior</button>
+        <button type="button" (click)="siguientePagina()">Siguiente »</button>
+      </div>
+    </div>
+
+    <!-- Página 4 -->
+    <div *ngIf="paginaActual === 4" class="pagina activa" id="pagina4">
+      <div class="seccion-titulo"><i class="fas fa-folder-open"></i> IV. DOCUMENTOS Y ARCHIVOS ADJUNTOS</div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label><b>Nivel de riesgo predicho (modelo):</b></label>
+          <span *ngIf="nivelRiesgoPredicho">
+            <b style="color: orange;">{{ nivelRiesgoPredicho }}</b>
+            <span *ngIf="confiabilidad_ml !== null && confiabilidad_ml !== undefined">
+              (Confiabilidad: {{ (confiabilidad_ml * 100) | number: '1.0-1' }}%)
+            </span>
+          </span>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="aforo_declarado"><b>Aforo declarado (número máximo de personas):</b></label>
+          <input type="number" id="aforo_declarado" name="aforo_declarado" [(ngModel)]="aforo_declarado" min="0" />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipo de trámite seleccionado:</label>
+          <input type="text" [value]="tipoTramite=='itse'?'ITSE':tipoTramite=='ecse'?'ECSE':''" readonly />
+        </div>
+        <div class="form-group" *ngIf="tipoTramite==='itse'">
+          <label>Modalidad ITSE:</label>
+          <input type="text" [value]="tipoItse=='nuevo'?'Nuevo':'Renovación'" readonly />
+        </div>
+        <div class="form-group" *ngIf="tipoTramite==='ecse'">
+          <label>Modalidad ECSE:</label>
+          <input type="text" [value]="tipoEcse=='hasta3000'?'Hasta 3000 personas':'Mayor a 3000 personas'" readonly />
+        </div>
+      </div>
+
+      <div *ngIf="tipoTramite === 'itse' && tipoItse">
+        <b>DOCUMENTOS REQUERIDOS ITSE</b>
+        <div class="docs-requeridos-row">
+          <label class="doc-checkbox">
+            <input type="checkbox" [(ngModel)]="docsSeleccionados['Recibo de pago']" name="doc_ReciboPago" />
+            Recibo de pago
+          </label>
+          <label class="doc-checkbox">
+            <input
+              type="checkbox"
+              [(ngModel)]="docsSeleccionados['Declaración Jurada de Cumplimiento de Condiciones de Seguridad en la Edificación']"
+              name="doc_DeclaracionJuradaPosterior"
+            />
+            Declaración Jurada de Cumplimiento de Condiciones de Seguridad en la Edificación
+          </label>
+          <label *ngFor="let doc of getDocsRequeridos(); let idx = index" class="doc-checkbox">
+            <input type="checkbox" [(ngModel)]="docsSeleccionados[doc]" [name]="'doc_' + idx" /> {{ doc }}
+          </label>
+        </div>
+      </div>
+
+      <div *ngIf="tipoTramite === 'ecse' && tipoEcse">
+        <b>Documentos requeridos ECSE</b>
+        <div class="docs-requeridos-row">
+          <label class="doc-checkbox">
+            <input type="checkbox" [(ngModel)]="docsSeleccionados['Recibo de pago']" name="doc_ReciboPagoEcse" />
+            Recibo de pago
+          </label>
+          <label class="doc-checkbox">
+            <input
+              type="checkbox"
+              [(ngModel)]="docsSeleccionados['Declaración Jurada de Cumplimiento de Condiciones de Seguridad en la Edificación']"
+              name="doc_DeclaracionJuradaPosteriorEcse"
+            />
+            Declaración Jurada de Cumplimiento de Condiciones de Seguridad en la Edificación
+          </label>
+          <label *ngFor="let doc of getDocsRequeridos(); let idx = index" class="doc-checkbox">
+            <input type="checkbox" [(ngModel)]="docsSeleccionados[doc]" [name]="'docEcse_' + idx" /> {{ doc }}
+          </label>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label for="inspectorAsignado">Asignar inspector:</label>
+          <select
+            id="inspectorAsignado"
+            [(ngModel)]="inspectorAsignado"
+            name="inspectorAsignado"
+            required
+          >
+            <option value="">-- Selecciona inspector --</option>
+            <option *ngFor="let inspector of inspectores" [value]="inspector.usuario">
+              {{ inspector.nombres_completos }} ({{ inspector.usuario }})
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex:2;">
+          <label>Subir archivos:</label>
+          <input type="file" multiple (change)="onFileChange($event, '', 'pagina3')" name="archivos_subidos" />
+        </div>
+      </div>
+
+      <div class="error" *ngIf="errorPagina4">{{ errorPagina4 }}</div>
+
+      <div class="botones">
+        <button type="button" class="secondary" (click)="anteriorPagina()">« Anterior</button>
+        <button type="submit">Guardar</button>
+      </div>
+    </div>
+  </form>
+</div>
+
+<!-- MODAL PARA MAPA DE GOOGLE MAPS -->
+<div *ngIf="showModalMapa" class="modal-mapa">
+  <div class="modal-mapa-content">
+    <div class="modal-mapa-header">
+      <h3><i class="fas fa-map-marked-alt"></i> Selecciona la Ubicación Exacta del Establecimiento</h3>
+      <button type="button" class="btn-cerrar-mapa" (click)="cerrarModalMapa()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-mapa-body">
+      <div class="instrucciones">
+        <i class="fas fa-info-circle"></i>
+        Haz clic en el mapa para marcar la ubicación exacta del establecimiento
+      </div>
+
+      <!-- Botón para buscar la dirección ingresada -->
+      <div class="buscar-direccion-container" *ngIf="direccion && direccion.trim() !== ''">
+        <button type="button" class="btn-buscar-direccion" (click)="geocodificarDireccion()">
+          <i class="fas fa-search-location"></i>
+          <span>Buscar: "{{ direccion | slice:0:50 }}{{ direccion.length > 50 ? '...' : '' }}"</span>
+        </button>
+      </div>
+      
+      <div #mapaContainer id="mapa-container" class="mapa-google"></div>
+      
+      <div class="coordenadas-info" *ngIf="latitudTemp && longitudTemp">
+        <i class="fas fa-map-pin"></i>
+        <span>Lat: {{ latitudTemp | number:'1.6-6' }}, Lng: {{ longitudTemp | number:'1.6-6' }}</span>
+      </div>
+    </div>
+    
+    <div class="modal-mapa-footer">
+      <button type="button" class="btn-cancelar" (click)="cerrarModalMapa()">Cancelar</button>
+      <button type="button" class="btn-guardar-ubicacion" (click)="guardarUbicacion()">
+        <i class="fas fa-save"></i> Guardar Ubicación
+      </button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,581 @@
+/* ============================================
+   👤 PERFIL - DISEÑO PROFESIONAL PREMIUM
+   Estilo idéntico a REPORTES
+   ============================================ */
+
+.perfil-container {
+  width: 100%;
+  min-height: 100vh;
+  padding: 32px 40px;
+  background: linear-gradient(135deg, #E8F5E8 0%, #F0F9F0 50%, #E8F5E8 100%);
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+
+.perfil-header {
+  padding: 28px 32px;
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  margin-bottom: 24px;
+  animation: slideInDown 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-title i {
+  font-size: 32px;
+  color: #1B5E5E;
+}
+
+.header-title h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1A202C;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.header-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.perfil-avatar-wrapper {
+  position: relative;
+}
+
+.perfil-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1B5E5E 0%, #257575 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  color: white;
+  box-shadow: 0 4px 12px rgba(27, 94, 94, 0.3);
+  border: 3px solid white;
+}
+
+.perfil-avatar-img {
+  object-fit: cover;
+}
+
+.btn-cambiar-foto {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  color: white;
+  border: 3px solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  font-size: 14px;
+}
+
+.btn-cambiar-foto:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.user-email {
+  font-size: 14px;
+  color: #64748B;
+  font-weight: 500;
+  margin: 0;
+}
+
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  background: rgba(27, 94, 94, 0.12);
+  color: #1B5E5E;
+  border-radius: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  align-self: flex-start;
+}
+
+/* ============================================
+   CONTENIDO
+   ============================================ */
+
+.perfil-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: cardSlideIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: 0.1s;
+}
+
+@keyframes cardSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.perfil-card {
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 24px 32px;
+  background: linear-gradient(135deg, #1B5E5E 0%, #257575 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header h2 {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  letter-spacing: -0.3px;
+}
+
+.card-header h2 i {
+  font-size: 20px;
+}
+
+.btn-editar {
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-editar:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-2px);
+}
+
+.btn-editar i {
+  font-size: 14px;
+}
+
+.card-body {
+  padding: 32px;
+}
+
+/* ============================================
+   INFO GRID
+   ============================================ */
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.info-item.full-width {
+  grid-column: 1 / -1;
+}
+
+.info-item label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748B;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info-item label i {
+  color: #1B5E5E;
+  font-size: 14px;
+}
+
+.info-item span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A202C;
+  padding: 10px 14px;
+  background: #F8FAFA;
+  border-radius: 8px;
+  border: 1px solid #E2E8F0;
+}
+
+.info-item input,
+.info-item select {
+  padding: 12px 16px;
+  background: #FFFFFF;
+  border: 2px solid #E2E8F0;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #1A202C;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+.info-item input:focus,
+.info-item select:focus {
+  outline: none;
+  border-color: #1B5E5E;
+  box-shadow: 0 0 0 4px rgba(27, 94, 94, 0.1);
+}
+
+.info-item input:disabled,
+.info-item select:disabled {
+  background: #F1F5F9;
+  color: #64748B;
+  cursor: not-allowed;
+  border-color: #E2E8F0;
+}
+
+/* ============================================
+   PASSWORD INFO
+   ============================================ */
+
+.password-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 20px;
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 4px solid #3B82F6;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.password-info i {
+  font-size: 20px;
+  color: #3B82F6;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.password-info p {
+  font-size: 13px;
+  color: #1E293B;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ============================================
+   FOOTER / ACCIONES
+   ============================================ */
+
+.card-footer {
+  padding: 24px 32px;
+  background: #F8FAFC;
+  border-top: 2px solid #E2E8F0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #1B5E5E 0%, #257575 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(27, 94, 94, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(27, 94, 94, 0.4);
+}
+
+.btn-secondary {
+  background: #F1F5F9;
+  color: #64748B;
+  border: 2px solid #E2E8F0;
+}
+
+.btn-secondary:hover {
+  background: #E2E8F0;
+  color: #475569;
+  transform: translateY(-2px);
+}
+
+/* ============================================
+   ACTIVIDAD RECIENTE
+   ============================================ */
+
+.actividad-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.actividad-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #F8FAFA;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.actividad-item:hover {
+  background: white;
+  border-color: #1B5E5E;
+  box-shadow: 0 2px 8px rgba(27, 94, 94, 0.1);
+}
+
+.actividad-icono {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.actividad-icono.info {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563EB;
+}
+
+.actividad-icono.success {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+}
+
+.actividad-icono.warning {
+  background: rgba(245, 158, 11, 0.1);
+  color: #D97706;
+}
+
+.actividad-icono.error {
+  background: rgba(239, 68, 68, 0.1);
+  color: #DC2626;
+}
+
+.actividad-content {
+  flex: 1;
+}
+
+.actividad-titulo {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1A202C;
+  margin-bottom: 4px;
+}
+
+.actividad-descripcion {
+  font-size: 13px;
+  color: #64748B;
+  margin: 4px 0;
+}
+
+.actividad-fecha {
+  font-size: 12px;
+  color: #94A3B8;
+}
+
+.no-actividad {
+  padding: 80px 20px;
+  text-align: center;
+  color: #64748B;
+}
+
+.no-actividad i {
+  font-size: 64px;
+  margin-bottom: 16px;
+  display: block;
+  opacity: 0.3;
+  color: #CBD5E1;
+}
+
+.no-actividad p {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: #94A3B8;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .perfil-container {
+    padding: 24px 20px;
+  }
+
+  .perfil-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .header-info {
+    flex-direction: column;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .perfil-container {
+    padding: 20px 16px;
+  }
+  
+  .perfil-header {
+    padding: 20px;
+  }
+
+  .header-title h2 {
+    font-size: 20px;
+  }
+
+  .card-header {
+    padding: 20px 24px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .card-body {
+    padding: 24px;
+  }
+
+  .card-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card-footer button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .perfil-header {
+    padding: 16px;
+  }
+
+  .perfil-avatar {
+    width: 60px;
+    height: 60px;
+    font-size: 24px;
+  }
+
+  .btn-cambiar-foto {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .header-title h2 {
+    font-size: 18px;
+  }
+
+  .header-title i {
+    font-size: 24px;
+  }
+
+  .card-body {
+    padding: 20px;
+  }
+}

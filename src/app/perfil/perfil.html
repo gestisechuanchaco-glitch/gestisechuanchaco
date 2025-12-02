@@ -1,0 +1,229 @@
+<div class="perfil-container">
+  
+  <!-- HEADER ESTILO REPORTES -->
+  <div class="perfil-header">
+    <div class="header-title">
+      <i class="fas fa-user-circle"></i>
+      <h2>{{ usuarioNombre }}</h2>
+    </div>
+    
+    <div class="header-info">
+      <div class="perfil-avatar-wrapper">
+        <!-- Avatar con iniciales (si NO hay foto) -->
+        <div class="perfil-avatar" *ngIf="!fotoPerfilUrl">
+          {{ getIniciales() }}
+        </div>
+        
+        <!-- Avatar con foto (si HAY foto) -->
+        <img [src]="fotoPerfilUrl" alt="Foto de perfil" class="perfil-avatar perfil-avatar-img" *ngIf="fotoPerfilUrl">
+        
+        <!-- Input file oculto -->
+        <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">
+        
+        <!-- Botón para cambiar foto -->
+        <button class="btn-cambiar-foto" title="Cambiar foto" (click)="fileInput.click()">
+          <i class="fas fa-camera"></i>
+        </button>
+      </div>
+      
+      <div class="user-info">
+        <p class="user-email">{{ usuarioEmail }}</p>
+        <span class="user-badge">{{ usuarioRol }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="perfil-content">
+    
+    <!-- SECCIÓN 1: Información Personal -->
+    <div class="perfil-card">
+      <div class="card-header">
+        <h2>
+          <i class="fas fa-user"></i>
+          Información Personal
+        </h2>
+        <button class="btn-editar" (click)="editarInformacionPersonal()" *ngIf="!editandoPersonal">
+          <i class="fas fa-edit"></i> Editar
+        </button>
+      </div>
+      
+      <div class="card-body">
+        <div class="info-grid">
+          
+          <div class="info-item">
+            <label><i class="fas fa-user"></i> Nombre Completo</label>
+            <input type="text" [(ngModel)]="usuario.nombre" [disabled]="!editandoPersonal" 
+                   placeholder="Nombre completo">
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-id-card"></i> DNI</label>
+            <input type="text" [(ngModel)]="usuario.dni" [disabled]="!editandoPersonal" 
+                   placeholder="12345678" maxlength="8">
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-envelope"></i> Correo Electrónico</label>
+            <input type="email" [(ngModel)]="usuario.email" [disabled]="!editandoPersonal" 
+                   placeholder="correo@ejemplo.com">
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-phone"></i> Teléfono</label>
+            <input type="tel" [(ngModel)]="usuario.telefono" [disabled]="!editandoPersonal" 
+                   placeholder="+51 999 888 777">
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-calendar"></i> Fecha de Nacimiento</label>
+            <input type="date" [(ngModel)]="usuario.fechaNacimiento" [disabled]="!editandoPersonal">
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-venus-mars"></i> Género</label>
+            <select [(ngModel)]="usuario.genero" [disabled]="!editandoPersonal">
+              <option value="">Seleccionar</option>
+              <option value="femenino">Femenino</option>
+              <option value="masculino">Masculino</option>
+              <option value="otro">Otro</option>
+            </select>
+          </div>
+
+          <div class="info-item full-width">
+            <label><i class="fas fa-home"></i> Dirección</label>
+            <input type="text" [(ngModel)]="usuario.direccion" [disabled]="!editandoPersonal" 
+                   placeholder="Av. Principal 123, Huanchaco, Trujillo">
+          </div>
+
+        </div>
+
+        <div class="card-footer" *ngIf="editandoPersonal">
+          <button class="btn-secondary" (click)="cancelarEdicion()">
+            <i class="fas fa-times"></i> Cancelar
+          </button>
+          <button class="btn-primary" (click)="guardarInformacionPersonal()">
+            <i class="fas fa-save"></i> Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: Información Laboral -->
+    <div class="perfil-card">
+      <div class="card-header">
+        <h2>
+          <i class="fas fa-briefcase"></i>
+          Información Laboral
+        </h2>
+      </div>
+      
+      <div class="card-body">
+        <div class="info-grid">
+          
+          <div class="info-item">
+            <label><i class="fas fa-user-tie"></i> Cargo</label>
+            <span>{{ usuario.cargo || 'Administrador' }}</span>
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-building"></i> Departamento</label>
+            <span>Defensa Civil</span>
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-calendar-check"></i> Fecha de Ingreso</label>
+            <span>{{ usuario.fechaIngreso | date:'dd/MM/yyyy' }}</span>
+          </div>
+
+          <div class="info-item">
+            <label><i class="fas fa-hashtag"></i> ID de Empleado</label>
+            <span>{{ usuario.idEmpleado || 'DC-2024-001' }}</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: Cambiar Contraseña -->
+    <div class="perfil-card">
+      <div class="card-header">
+        <h2>
+          <i class="fas fa-lock"></i>
+          Seguridad
+        </h2>
+      </div>
+      
+      <div class="card-body">
+        <form (ngSubmit)="cambiarContrasena()">
+          <div class="info-grid">
+            
+            <div class="info-item full-width">
+              <label><i class="fas fa-key"></i> Contraseña Actual</label>
+              <input type="password" [(ngModel)]="cambioPassword.actual" name="actual" 
+                     placeholder="Ingrese su contraseña actual" required>
+            </div>
+
+            <div class="info-item">
+              <label><i class="fas fa-lock"></i> Nueva Contraseña</label>
+              <input type="password" [(ngModel)]="cambioPassword.nueva" name="nueva" 
+                     placeholder="Nueva contraseña" required>
+            </div>
+
+            <div class="info-item">
+              <label><i class="fas fa-check-circle"></i> Confirmar Contraseña</label>
+              <input type="password" [(ngModel)]="cambioPassword.confirmar" name="confirmar" 
+                     placeholder="Confirmar contraseña" required>
+            </div>
+
+          </div>
+
+          <div class="password-info">
+            <i class="fas fa-info-circle"></i>
+            <p>La contraseña debe tener al menos 8 caracteres, incluir mayúsculas, minúsculas y números.</p>
+          </div>
+
+          <div class="card-footer">
+            <button type="submit" class="btn-primary">
+              <i class="fas fa-shield-alt"></i> Cambiar Contraseña
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 4: Actividad Reciente -->
+    <div class="perfil-card">
+      <div class="card-header">
+        <h2>
+          <i class="fas fa-history"></i>
+          Actividad Reciente
+        </h2>
+      </div>
+      
+      <div class="card-body">
+        <div class="actividad-lista">
+          
+          <div class="actividad-item" *ngFor="let actividad of actividadReciente">
+            <div class="actividad-icono" [ngClass]="actividad.tipo">
+              <i [class]="actividad.icono"></i>
+            </div>
+            <div class="actividad-content">
+              <div class="actividad-titulo">{{ actividad.accion }}</div>
+              <p class="actividad-descripcion">{{ actividad.descripcion }}</p>
+              <span class="actividad-fecha">{{ actividad.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+
+          <div class="no-actividad" *ngIf="actividadReciente.length === 0">
+            <i class="fas fa-inbox"></i>
+            <p>No hay actividad reciente</p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

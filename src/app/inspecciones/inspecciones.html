@@ -1,0 +1,623 @@
+<div class="reportes-container">
+  <!-- ⭐ HEADER PROFESIONAL -->
+  <div class="reportes-header">
+    <h1><i class="fas fa-clipboard-check"></i> MIS INSPECCIONES ASIGNADAS</h1>
+    <div class="header-actions">
+      <button class="btn-export" (click)="exportarExcel()">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+      </button>
+      <button class="btn-refresh" (click)="cargarInspecciones()">
+        <i class="fas fa-sync-alt"></i> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- ⭐ CONTENEDOR PRINCIPAL -->
+  <div class="contenedor-principal">
+    <!-- FILTROS -->
+    <div class="filtros-container">
+      <div class="filtro-item">
+        <label><i class="fas fa-search"></i> Expediente</label>
+        <input 
+          type="text" 
+          [(ngModel)]="filtroExpediente" 
+          (ngModelChange)="filtrarInspecciones()" 
+          placeholder="Buscar por expediente..." 
+        />
+      </div>
+
+      <div class="filtro-item">
+        <label><i class="fas fa-exclamation-triangle"></i> Riesgo</label>
+        <select [(ngModel)]="filtroRiesgo" (ngModelChange)="filtrarInspecciones()">
+          <option value="">Todos los riesgos</option>
+          <option value="BAJO">BAJO</option>
+          <option value="MEDIO">MEDIO</option>
+          <option value="ALTO">ALTO</option>
+          <option value="MUY ALTO">MUY ALTO</option>
+        </select>
+      </div>
+
+      <div class="filtro-item">
+        <label><i class="fas fa-check-circle"></i> Estado</label>
+        <select [(ngModel)]="filtroEstado" (ngModelChange)="filtrarInspecciones()">
+          <option value="">Todos los estados</option>
+          <option value="PENDIENTE">PENDIENTE</option>
+          <option value="EN PROCESO">EN PROCESO</option>
+          <option value="FINALIZADO">FINALIZADO</option>
+          <option value="ACEPTADO">ACEPTADO</option>
+        </select>
+      </div>
+
+      <div class="filtro-item">
+        <button class="btn-limpiar" (click)="limpiarFiltros()">
+          <i class="fas fa-eraser"></i> Limpiar Filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLA DE INSPECCIONES -->
+    <div class="tabla-container">
+      <table class="tabla-reportes">
+    <thead>
+      <tr>
+            <th>N° EXPEDIENTE</th>
+            <th>SOLICITANTE</th>
+            <th>RIESGO</th>
+            <th>ESTADO</th>
+            <th>FECHA EMISIÓN</th>
+            <th style="width: 220px;">ACCIONES</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let ins of inspeccionesPaginadas">
+            <td><strong>{{ ins.numerodeexpediente || 'SIN DATO' }}</strong></td>
+            <td>{{ ins.nombres_apellidos }}</td>
+        <td>
+              <span class="badge" [ngClass]="getRiesgoClass(ins.riesgo_incendio)">
+                {{ ins.riesgo_incendio }}
+              </span>
+        </td>
+            <td>
+              <span class="badge" [ngClass]="getEstadoClass(ins.estado)">
+                {{ ins.estado }}
+              </span>
+        </td>
+            <td>{{ ins.fecha ? (ins.fecha | date:'dd/MM/yyyy') : 'SIN DATO' }}</td>
+            <td>
+              <div class="acciones-grupo">
+                <button class="btn-accion btn-ver" (click)="verDetalle(ins)" title="Ver detalle">
+                  <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn-accion btn-foto" (click)="abrirPanelFotografico(ins)" title="Panel Fotográfico">
+                  <i class="fas fa-images"></i>
+                </button>
+              </div>
+        </td>
+          </tr>
+          <tr *ngIf="inspeccionesPaginadas.length === 0">
+            <td colspan="6" class="sin-datos">
+              <i class="fas fa-inbox"></i>
+              <p>No hay inspecciones asignadas</p>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+    </div>
+
+    <!-- PAGINACIÓN -->
+    <div class="paginacion-container">
+      <button class="btn-pag" (click)="paginaAnterior()" [disabled]="paginaActual === 1">
+        <i class="fas fa-chevron-left"></i> Anterior
+      </button>
+      
+      <div class="paginas-numeros">
+        <button 
+          *ngFor="let p of getPaginasArray()" 
+          class="btn-numero" 
+          [class.activo]="p === paginaActual"
+          (click)="irAPagina(p)">
+          {{ p }}
+        </button>
+      </div>
+      
+      <button class="btn-pag" (click)="paginaSiguiente()" [disabled]="paginaActual === totalPaginas">
+        Siguiente <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="info-paginacion">
+      Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} - 
+      {{ Math.min(paginaActual * itemsPorPagina, inspeccionesFiltradas.length) }} 
+      de {{ inspeccionesFiltradas.length }} inspecciones
+    </div>
+  </div><!-- FIN CONTENEDOR PRINCIPAL -->
+</div>
+
+<!-- ==================== MODAL VER DETALLE ==================== -->
+<div *ngIf="modalDetalleVisible" class="modal-overlay" (click)="cerrarModalDetalle()">
+  <div class="modal-detalle" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3><i class="fas fa-clipboard-check"></i> Detalle de la Inspección</h3>
+      <button class="modal-close" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-detalle">
+      <!-- SECCIÓN: DATOS DEL SOLICITANTE -->
+      <div class="detalle-seccion">
+        <h4 class="seccion-titulo"><i class="fas fa-user"></i> Datos del Solicitante</h4>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Expediente</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.numerodeexpediente || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Solicitante</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.nombres_apellidos }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">DNI/CE</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.dni_ce }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Domicilio</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.domicilio }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Correo</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.correo }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Teléfonos</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.telefonos }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: DATOS DEL ESTABLECIMIENTO -->
+      <div class="detalle-seccion">
+        <h4 class="seccion-titulo"><i class="fas fa-building"></i> Datos del Establecimiento</h4>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Razón Social</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.razon_social }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">RUC</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.ruc }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Nombre Comercial</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.nombre_comercial || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Teléfonos Establecimiento</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.telefonos_establecimiento || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Dirección</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.direccion }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Referencia</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.referencia || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Localidad</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.localidad || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Distrito</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.distrito || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Provincia</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.provincia || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Departamento</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.departamento || 'SIN DATO' }}</span>
+  </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Giro/Actividades</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.giro_actividades }}</span>
+  </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Actividad Específica</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.actividad_especifica || 'SIN DATO' }}</span>
+      </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Horario Atención</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.horario_atencion || 'SIN DATO' }}</span>
+          </div>
+          </div>
+        </div>
+
+      <!-- SECCIÓN: CARACTERÍSTICAS DEL LOCAL -->
+      <div class="detalle-seccion">
+        <h4 class="seccion-titulo"><i class="fas fa-ruler-combined"></i> Características del Local</h4>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Área Ocupada (m²)</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.area_ocupada || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Número de Pisos</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.num_pisos || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Piso Ubicado</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.piso_ubicado || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Área Terreno (m²)</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.area_terreno || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Área Techada por Nivel (m²)</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.area_techada_por_nivel || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Área Libre (m²)</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.area_libre || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Antigüedad Edificación (años)</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.antiguedad_edificacion_anios || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Antigüedad Actividad (años)</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.antiguedad_actividad_anios || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Aforo Declarado</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.aforo_declarado || 'SIN DATO' }}</span>
+          </div>
+            </div>
+          </div>
+
+      <!-- SECCIÓN: TIPO DE TRÁMITE -->
+      <div class="detalle-seccion">
+        <h4 class="seccion-titulo"><i class="fas fa-file-alt"></i> Tipo de Trámite</h4>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Tipo Trámite</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.tipo_tramite || 'SIN DATO' }}</span>
+            </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Tipo ITSE</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.tipo_itse || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Tipo ECSE</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.tipo_ecse || 'SIN DATO' }}</span>
+          </div>
+          </div>
+        </div>
+
+      <!-- SECCIÓN: EVALUACIÓN DE RIESGOS -->
+      <div class="detalle-seccion">
+        <h4 class="seccion-titulo"><i class="fas fa-exclamation-triangle"></i> Evaluación de Riesgos</h4>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Riesgo Incendio</span>
+            <span class="badge" [ngClass]="getRiesgoClass(inspeccionSeleccionada?.riesgo_incendio)">
+              {{ inspeccionSeleccionada?.riesgo_incendio }}
+            </span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Riesgo Colapso</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.riesgo_colapso || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item full-width">
+            <span class="detalle-label">Detalle de Riesgo</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.riesgo_detalle || 'SIN DATO' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- SECCIÓN: ESTADO E INSPECTOR -->
+      <div class="detalle-seccion">
+        <h4 class="seccion-titulo"><i class="fas fa-clipboard-check"></i> Estado e Inspector</h4>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <span class="detalle-label">Estado</span>
+            <span class="badge" [ngClass]="getEstadoClass(inspeccionSeleccionada?.estado)">
+              {{ inspeccionSeleccionada?.estado }}
+          </span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Inspector Asignado</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.inspector_asignado || 'SIN ASIGNAR' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Creado Por</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.creadoPor || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Modificado Por</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.modificadoPor || 'SIN DATO' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Fecha Emisión</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.fecha | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+
+          <div class="detalle-item">
+            <span class="detalle-label">Fecha Inicio</span>
+            <span class="detalle-value">{{ inspeccionSeleccionada?.fecha_inicio ? (inspeccionSeleccionada.fecha_inicio | date:'dd/MM/yyyy HH:mm') : 'SIN DATO' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secundario" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+<!-- ==================== PANEL FOTOGRÁFICO FORMAL (ANEXO 18) ==================== -->
+<div *ngIf="modalPanelVisible" class="modal-overlay-panel" (click)="cerrarPanelFotografico()">
+  <div class="panel-fotografico-formal" (click)="$event.stopPropagation()">
+    
+    <!-- ENCABEZADO OFICIAL -->
+    <div class="panel-encabezado">
+      <div class="encabezado-titulo">
+        <h2>ANEXO 18</h2>
+        <h3>PANEL FOTOGRÁFICO PARA ITSE</h3>
+      </div>
+      <button class="close-btn-formal" (click)="cerrarPanelFotografico()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- DATOS OFICIALES ANEXO 18 -->
+    <div class="datos-oficiales-tabla">
+      <table class="tabla-datos-oficiales">
+        <tbody>
+          <tr>
+            <td class="celda-numero">1</td>
+            <td class="celda-contenido">
+              <span class="label-dato">MUNICIPALIDAD DISTRITAL DE:</span>
+              <span class="valor-dato">HUANCHACO</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="celda-numero">2</td>
+            <td class="celda-contenido">
+              <span class="label-dato">ÓRGANO EJECUTANTE:</span>
+              <span class="valor-dato">{{ inspeccionActual?.razon_social || 'MUNICIPALIDAD DISTRITAL DE HUANCHACO' }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="celda-numero">3</td>
+            <td class="celda-contenido">
+              <span class="label-dato">ITSE:</span>
+              <span class="valor-dato">RIESGO {{ inspeccionActual?.riesgo_incendio || 'ALTO' }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="celda-numero">4</td>
+            <td class="celda-contenido">
+              <span class="label-dato">EXP. N°:</span>
+              <span class="valor-dato">{{ inspeccionActual?.numerodeexpediente || '14159 - 2025 -01' }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="celda-numero">5</td>
+            <td class="celda-contenido">
+              <span class="label-dato">NOMBRE COMERCIAL:</span>
+              <span class="valor-dato">{{ inspeccionActual?.nombre_comercial || inspeccionActual?.razon_social || 'SIN DATO' }}</span>
+            </td>
+          </tr>
+          <tr>
+            <td class="celda-numero">6</td>
+            <td class="celda-contenido">
+              <span class="label-dato">INSPECTOR:</span>
+              <span class="valor-dato">{{ inspeccionActual?.inspector_asignado || 'ING. DANIEL DAVID MARTÍNEZ RELUZ – CIP:100294 - RITSE N°2981' }}</span>
+            </td>
+            </tr>
+            <tr>
+            <td class="celda-numero">7</td>
+            <td class="celda-contenido">
+              <span class="label-dato">FECHA:</span>
+              <span class="valor-dato">{{ inspeccionActual?.fecha | date:'dd/MM/yyyy' }}</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TABLA PARA IMPRESIÓN (FORMATO OFICIAL ANEXO 18) -->
+    <div class="tabla-panel-formal">
+      <table class="tabla-impresion">
+        <thead>
+          <tr>
+            <th style="width: 50%;">PANEL FOTOGRÁFICO</th>
+            <th style="width: 35%;">BREVE DESCRIPCIÓN</th>
+            <th style="width: 15%;">Si observa cumplimiento de las condiciones de seguridad</th>
+            </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td>
+              <!-- Grid 2x2 con TODAS las fotos -->
+              <div class="grid-impresion-2x2">
+                <ng-container *ngFor="let fila of filasPanel">
+                  <div *ngFor="let preview of fila.previews.slice(0, 4)" class="foto-impresion-item">
+                    <img [src]="preview" alt="Foto" />
+                  </div>
+                </ng-container>
+                </div>
+              </td>
+              <td>
+              <!-- Descripción combinada de todas las filas -->
+              <div class="descripcion-impresion">
+                <ng-container *ngFor="let fila of filasPanel; let i = index">
+                  <span *ngIf="fila.descripcion">{{ fila.descripcion }}<br><br></span>
+                </ng-container>
+                <strong>SI CUMPLE CON LAS CONDICIONES DE SEGURIDAD EN LAS INSTALACIONES ELÉCTRICAS</strong>
+              </div>
+              </td>
+              <td>
+              <!-- Marca X en cumplimiento -->
+              <div class="cumplimiento-impresion">
+                <div class="check-si">SÍ</div>
+                <div class="marca-x" *ngIf="filasPanel.length > 0 && filasPanel[0].cumple === true">X</div>
+                <div class="check-no">NO</div>
+                <div class="marca-x" *ngIf="filasPanel.length > 0 && filasPanel[0].cumple === false">X</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- TABLA PARA PANTALLA (FILAS DINÁMICAS) -->
+    <div class="tabla-panel-formal">
+      <table class="tabla-anexo18-filas">
+        <thead>
+          <tr>
+            <th class="col-panel">PANEL FOTOGRÁFICO</th>
+            <th class="col-desc">BREVE DESCRIPCIÓN</th>
+            <th class="col-cumple">¿Cumple condiciones de seguridad?</th>
+            <th class="col-accion">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Fila dinámica para cada foto -->
+          <tr *ngFor="let fila of filasPanel; let idx = index" class="fila-panel">
+            <td class="celda-panel">
+              <input 
+                type="file" 
+                accept="image/*" 
+                multiple
+                (change)="seleccionarFotoFila($event, idx)"
+                [id]="'fileInput' + idx"
+                class="file-input-oculto"
+              />
+              <label [for]="'fileInput' + idx" class="btn-seleccionar-archivo">
+                <i class="fas fa-images"></i> Seleccionar foto(s)
+              </label>
+              <span class="texto-archivo" *ngIf="fila.archivos.length === 0">
+                Sin archivos seleccionados
+              </span>
+              <span class="texto-archivo-count" *ngIf="fila.archivos.length > 0">
+                {{ fila.archivos.length }} foto(s) seleccionada(s)
+              </span>
+              
+              <!-- Grid 2x2 de previews -->
+              <div *ngIf="fila.previews.length > 0" class="grid-fotos-panel">
+                <div *ngFor="let preview of fila.previews; let i = index" class="foto-item-panel">
+                  <img [src]="preview" alt="Foto {{i+1}}" />
+                  <button class="btn-eliminar-foto-grid" (click)="eliminarFotoDeGrid(idx, i)" title="Eliminar esta foto">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            </td>
+            
+            <td class="celda-desc">
+              <textarea 
+                [(ngModel)]="fila.descripcion"
+                class="textarea-fila" 
+                placeholder="Breve descripción"
+                rows="3"></textarea>
+            </td>
+            
+            <td class="celda-cumple">
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input 
+                    type="radio" 
+                    [name]="'cumple' + idx" 
+                    [value]="true"
+                    [(ngModel)]="fila.cumple"
+                  />
+                  <span>SÍ</span>
+                </label>
+                <label class="radio-label">
+                  <input 
+                    type="radio" 
+                    [name]="'cumple' + idx" 
+                    [value]="false"
+                    [(ngModel)]="fila.cumple"
+                  />
+                  <span>NO</span>
+                </label>
+              </div>
+            </td>
+            
+            <td class="celda-accion">
+              <button class="btn-eliminar-fila" (click)="eliminarFilaPanel(idx)" title="Eliminar fila">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+      <!-- Botón para agregar más filas -->
+      <div class="seccion-agregar">
+        <button class="btn-agregar-fila" (click)="agregarFilaPanel()">
+          <i class="fas fa-plus"></i> Agregar fila
+        </button>
+        </div>
+
+      <!-- Botón para guardar todas las fotos -->
+      <div class="seccion-guardar" *ngIf="filasPanel.length > 0">
+        <button class="btn-guardar-panel" (click)="guardarPanelFotografico()">
+          <i class="fas fa-save"></i> GUARDAR PANEL FOTOGRÁFICO
+        </button>
+    </div>
+    </div>
+
+    <!-- FOOTER CON ACCIONES -->
+    <div class="footer-formal">
+      <button class="btn-imprimir" onclick="window.print()">
+        <i class="fas fa-print"></i> IMPRIMIR PANEL
+      </button>
+      <button class="btn-cerrar-formal" (click)="cerrarPanelFotografico()">
+        <i class="fas fa-times"></i> CERRAR
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -1,0 +1,354 @@
+
+<div *ngIf="esLogin">
+  <router-outlet></router-outlet>
+</div>
+<div class="dashboard-layout" *ngIf="!esLogin">
+  <aside class="sidebar-nrikon" [class.collapsed]="sidebarCollapsed" [class.mobile-open]="mobileMenuOpen">
+    <div class="sidebar-header-nrikon">
+      <div class="logo-container-nrikon">
+        <img src="assets/defensa-civil-logo.png" alt="Defensa Civil" class="logo-img-nrikon">
+        <div class="logo-text-wrapper" *ngIf="!sidebarCollapsed">
+          <span class="logo-title-nrikon">GESTISEC</span>
+          <span class="logo-subtitle-nrikon">Defensa Civil de Huanchaco</span>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav-nrikon">
+      <ul class="nav-list-nrikon">
+        <ng-container *ngIf="rol === 'Administrativo'">
+          <li>
+            <a routerLink="/dashboard" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-th-large"></i>
+              <span *ngIf="!sidebarCollapsed">Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/solicitudes" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-file-invoice"></i>
+              <span *ngIf="!sidebarCollapsed">Solicitudes</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/reportes" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-chart-bar"></i>
+              <span *ngIf="!sidebarCollapsed">Reportes</span>
+            </a>
+          </li>
+        </ng-container>
+        <ng-container *ngIf="rol === 'Inspector'">
+          <li>
+            <a routerLink="/bienvenido" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-home"></i>
+              <span *ngIf="!sidebarCollapsed">Inicio</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/inspecciones" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-clipboard-check"></i>
+              <span *ngIf="!sidebarCollapsed">Inspecciones</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/historial-inspecciones" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-history"></i>
+              <span *ngIf="!sidebarCollapsed">Historial de Inspecciones</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/informe" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-file-alt"></i>
+              <span *ngIf="!sidebarCollapsed">Informe</span>
+            </a>
+          </li>
+        </ng-container>
+
+ 
+        <ng-container *ngIf="rol === 'Administrador'">
+          <li>
+            <a routerLink="/dashboard" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-th-large"></i>
+              <span *ngIf="!sidebarCollapsed">Dashboard</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/solicitudes" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-file-invoice"></i>
+              <span *ngIf="!sidebarCollapsed">Solicitudes</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/reportes" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-chart-bar"></i>
+              <span *ngIf="!sidebarCollapsed">Reportes</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/historial" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-history"></i>
+              <span *ngIf="!sidebarCollapsed">Historial</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/locales" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-store"></i>
+              <span *ngIf="!sidebarCollapsed">Locales</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/calendario" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-calendar-alt"></i>
+              <span *ngIf="!sidebarCollapsed">Calendario</span>
+            </a>
+          </li>
+          <li>
+            <a routerLink="/fiscalizacion" routerLinkActive="active" class="nav-link-nrikon">
+              <i class="fas fa-clipboard-list"></i>
+              <span *ngIf="!sidebarCollapsed">Fiscalización</span>
+            </a>
+          </li>
+        </ng-container>
+      </ul>
+    </nav>
+
+
+    <div class="sidebar-footer-nrikon">
+      
+
+      <div class="sidebar-user-nrikon" *ngIf="!sidebarCollapsed">
+        <div class="user-avatar-nrikon" *ngIf="!fotoPerfilUrl">
+          {{ getUsuarioIniciales() }}
+        </div>
+        <img [src]="fotoPerfilUrl" alt="Usuario" class="user-avatar-nrikon" *ngIf="fotoPerfilUrl">
+        <div class="user-info-nrikon">
+          <span class="user-name-nrikon">{{ usuarioNombre }}</span>
+          <button class="logout-btn-nrikon" (click)="cerrarSesion()" title="Cerrar sesión">
+            <i class="fas fa-sign-out-alt"></i>
+          </button>
+        </div>
+      </div>
+
+
+      <div class="sidebar-user-collapsed" *ngIf="sidebarCollapsed">
+        <div class="user-avatar-nrikon" *ngIf="!fotoPerfilUrl">
+          {{ getUsuarioIniciales() }}
+        </div>
+        <img [src]="fotoPerfilUrl" alt="Usuario" class="user-avatar-nrikon" *ngIf="fotoPerfilUrl">
+      </div>
+
+
+      <div class="sidebar-actions-nrikon" *ngIf="!sidebarCollapsed">
+        <button class="action-btn-nrikon" (click)="toggleTheme()" 
+                [title]="currentTheme === 'dark' ? 'Modo claro' : 'Modo oscuro'">
+          <i class="fas" [class.fa-sun]="currentTheme === 'dark'" [class.fa-moon]="currentTheme === 'light'"></i>
+        </button>
+        <button class="action-btn-nrikon" title="Ayuda">
+          <i class="fas fa-question-circle"></i>
+        </button>
+      </div>
+
+
+      <div class="sidebar-actions-collapsed" *ngIf="sidebarCollapsed">
+        <button class="action-btn-nrikon" (click)="toggleTheme()" 
+                [title]="currentTheme === 'dark' ? 'Modo claro' : 'Modo oscuro'">
+          <i class="fas" [class.fa-sun]="currentTheme === 'dark'" [class.fa-moon]="currentTheme === 'light'"></i>
+        </button>
+        <button class="action-btn-nrikon" title="Ayuda">
+          <i class="fas fa-question-circle"></i>
+        </button>
+      </div>
+      
+    </div>
+    
+  </aside>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <div class="main-content-nrikon">
+    
+  
+    <header class="topbar-nrikon">
+      
+
+      <div class="topbar-left-nrikon">
+        <button class="menu-toggle-nrikon" (click)="toggleSidebar()">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1 class="page-title-nrikon">{{ pageTitle }}</h1>
+      </div>
+
+      <!-- Derecha -->
+      <div class="topbar-right-nrikon">
+
+    
+
+        <!-- Notificaciones -->
+        <div class="topbar-dropdown">
+          <button class="icon-btn-nrikon" 
+                  (click)="toggleNotifications()"
+                  [class.bell-animado]="tieneEventosProximos">
+            <i class="fas fa-bell" [class.bell-ring]="tieneEventosProximos"></i>
+            <span class="badge-nrikon" 
+                  *ngIf="notificacionesNoLeidasCount > 0"
+                  [class.badge-pulso]="tieneEventosProximos">
+              {{ notificacionesNoLeidasCount }}
+            </span>
+            <span class="punto-notificacion" *ngIf="tieneEventosProximos"></span>
+          </button>
+
+          <div class="dropdown-nrikon" *ngIf="showNotifications">
+            <div class="dropdown-header-nrikon">
+              <h4>Notificaciones</h4>
+            </div>
+            <div class="dropdown-body-nrikon">
+              <!-- Eventos Próximos del Calendario -->
+              <div *ngIf="eventosProximos.length > 0" class="eventos-proximos-header">
+                <h5><i class="fas fa-calendar-alt"></i> Eventos Próximos</h5>
+              </div>
+              <div *ngFor="let evento of eventosProximos" 
+                   class="noti-item-nrikon noti-evento-proximo"
+                   (click)="navegarACalendario()"
+                   style="cursor: pointer;">
+                <div class="noti-icon-nrikon evento-calendario">
+                  <i class="fas" 
+                     [class.fa-exclamation-circle]="getDiasRestantes(evento) === 0"
+                     [class.fa-exclamation-triangle]="getDiasRestantes(evento) <= 1"
+                     [class.fa-info-circle]="getDiasRestantes(evento) <= 3"
+                     [class.fa-calendar-check]="getDiasRestantes(evento) > 3">
+                  </i>
+                </div>
+                <div class="noti-content-nrikon">
+                  <p class="noti-title-nrikon font-weight-bold">{{ evento.title }}</p>
+                  <span class="noti-mensaje-nrikon">
+                    <i class="fas fa-clock"></i>
+                    {{ formatearFechaEvento(evento.start) }}
+                    <span class="badge-dias-eventos" [class.urgente]="getDiasRestantes(evento) <= 1">
+                      {{ getTextoDias(evento) }}
+                    </span>
+                  </span>
+                </div>
+              </div>
+              
+              <div *ngIf="eventosProximos.length > 0 && notificaciones.length > 0" class="divider-notificaciones"></div>
+              
+              <div *ngIf="notificaciones.length === 0 && eventosProximos.length === 0" class="empty-nrikon">
+                <i class="fas fa-bell-slash"></i>
+                <p>No hay notificaciones</p>
+              </div>
+              <div *ngFor="let noti of notificaciones" 
+                   class="noti-item-nrikon" 
+                   [class.noti-no-leida]="!noti.leida"
+                   (click)="marcarComoLeida(noti)"
+                   style="cursor: pointer;">
+                <div class="noti-icon-nrikon">
+                  <i [class]="'fas ' + (noti.icono || 'fa-bell')"></i>
+                </div>
+                <div class="noti-content-nrikon">
+                  <p class="noti-title-nrikon" [class.font-weight-bold]="!noti.leida">{{ noti.titulo }}</p>
+                  <span class="noti-mensaje-nrikon">{{ noti.mensaje }}</span>
+                  <span class="noti-date-nrikon">{{ noti.creado_en | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                <button class="noti-close-nrikon" (click)="eliminarNoti(noti); $event.stopPropagation()">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+              
+              <div *ngIf="notificaciones.length > 0 && notificacionesNoLeidasCount > 0" class="noti-footer-nrikon">
+                <button class="btn-marcar-todas-nrikon" (click)="marcarTodasLeidas()">
+                  <i class="fas fa-check-double"></i> Marcar todas como leídas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Usuario -->
+        <div class="topbar-dropdown">
+          <button class="user-btn-nrikon" (click)="toggleUserMenu()">
+            
+            <!-- Avatar pequeño con foto o iniciales -->
+            <div class="user-avatar-sm-nrikon" *ngIf="!fotoPerfilUrl">
+              {{ getUsuarioIniciales() }}
+            </div>
+            <img [src]="fotoPerfilUrl" alt="Usuario" class="user-avatar-sm-nrikon user-avatar-img-sm" *ngIf="fotoPerfilUrl">
+            
+            <span class="user-name-topbar-nrikon">{{ usuarioNombre }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+
+          <div class="dropdown-nrikon user-dropdown-nrikon" *ngIf="showUserMenu">
+            <div class="user-dropdown-header-nrikon">
+              
+              <!-- Avatar grande con foto o iniciales -->
+              <div class="user-avatar-lg-nrikon" *ngIf="!fotoPerfilUrl">
+                {{ getUsuarioIniciales() }}
+              </div>
+              <img [src]="fotoPerfilUrl" alt="Usuario" class="user-avatar-lg-nrikon user-avatar-img-lg" *ngIf="fotoPerfilUrl">
+              
+              <h4>{{ usuarioNombre }}</h4>
+              <p>{{ usuarioEmail }}</p>
+              <span class="role-badge-nrikon">{{ rol }}</span>
+            </div>
+            <div class="dropdown-body-nrikon">
+  <a routerLink="/perfil" class="dropdown-link-nrikon" (click)="cerrarMenus()">
+    <i class="fas fa-user"></i>
+    <span>Mi Perfil</span>
+  </a>
+
+  <!-- ✅ SOLO VISIBLE PARA ADMINISTRADORES -->
+  <a routerLink="/ajustes" class="dropdown-link-nrikon" (click)="cerrarMenus()" *ngIf="rol === 'Administrador'">
+    <i class="fas fa-cog"></i>
+    <span>Configuración</span>
+  </a>
+  
+  <div class="divider-nrikon"></div>
+  <button class="dropdown-link-nrikon danger" (click)="cerrarSesion()">
+    <i class="fas fa-sign-out-alt"></i>
+    <span>Cerrar Sesión</span>
+  </button>
+</div>
+          </div>
+        </div>
+        
+      </div>
+    </header>
+
+    <main class="content-area-nrikon">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+
+  <!-- ✨ NOTIFICACIÓN DE EVENTOS PRÓXIMOS (ENCIMA DE TODO) ✨ -->
+  <div *ngIf="mostrarNotificacionEventos && eventoNotificacionPrincipal" 
+       class="notificacion-eventos-global"
+       [class.urgente]="eventoNotificacionPrincipal && getDiasRestantesEventoPrincipal(eventoNotificacionPrincipal) <= 1"
+       style="position: fixed !important; top: 20px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 999999 !important; display: block !important;">
+    <div class="notificacion-eventos-content">
+      <div class="notificacion-eventos-icono">
+        <i class="fas fa-bell" [class.campana-animada]="getDiasRestantesEventoPrincipal(eventoNotificacionPrincipal) <= 1"></i>
+        <span class="notificacion-eventos-pulso" *ngIf="getDiasRestantesEventoPrincipal(eventoNotificacionPrincipal) <= 1"></span>
+      </div>
+      <div class="notificacion-eventos-texto">
+        <strong>{{ obtenerTextoNotificacionPrincipal() }}</strong>
+        <span class="notificacion-eventos-detalle" *ngIf="eventoNotificacionPrincipal">
+          {{ eventoNotificacionPrincipal.title }} - 
+          {{ formatearFechaEventoPrincipal(eventoNotificacionPrincipal.start) }}
+        </span>
+      </div>
+      <div class="notificacion-eventos-acciones">
+        <button class="btn-notificacion-calendario" (click)="irACalendario()">
+          <i class="fas fa-calendar-alt"></i>
+          Ver Calendario
+        </button>
+        <button class="btn-notificacion-atendida" (click)="marcarEventoComoAtendido()" title="Marcar como atendida">
+          <i class="fas fa-check"></i>
+          Atendida
+        </button>
+        <button class="btn-notificacion-cerrar" (click)="cerrarNotificacionEventos()" title="Cerrar">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

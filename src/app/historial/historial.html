@@ -1,0 +1,301 @@
+
+  <div class="historial-container">
+  
+      <div class="historial-header-flex">
+        <h2 class="historial-titulo">HISTORIAL DE CAMBIOS DEL SISTEMA</h2>
+        <div class="historial-filtros">
+          <input 
+            type="text" 
+            class="historial-search" 
+            placeholder="Buscar expediente, usuario, acción..." 
+            [(ngModel)]="searchTerm"
+            (input)="filtrarCambios()" />
+          <button class="icon-btn" (click)="filtrarCambios()">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+      <!-- Panel blanco para la tabla y paginación -->
+      <div class="panel-blanco">
+        <div class="historial-table-wrapper">
+          <table class="historial-table">
+            <thead>
+              <tr>
+                <th style="min-width:120px;">N° EXPEDIENTE</th>
+                <th style="min-width:90px;">ACCIÓN</th>
+                <th style="min-width:150px;">FECHA</th>
+                <th style="min-width:110px;">MODIFICADO POR</th>
+                <th>CAMPOS MODIFICADOS</th>
+                <th style="min-width:110px;">MOTIVO</th>
+                <th style="min-width:75px;">DETALLE</th>
+                <th style="min-width:85px;">EDICIONES</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cambio of cambiosPaginados">
+                <td>{{ cambio.numerodeexpediente }}</td>
+                <td>
+                  <span [ngClass]="{
+                    'historial-accion-creado': mostrarAccionSimple(cambio.accion) === 'Creado',
+                    'historial-accion-editado': mostrarAccionSimple(cambio.accion) === 'Modificado',
+                    'historial-accion-borrado': mostrarAccionSimple(cambio.accion) === 'Borrado'
+                  }">{{ mostrarAccionSimple(cambio.accion) }}</span>
+                </td>
+                <td>{{ cambio.fecha | date:'dd/MM/yyyy HH:mm:ss' }}</td>
+                <td>
+                  <span class="usuario-label">{{ cambio.modificadoPor || cambio.realizadoPor }}</span>
+                </td>
+                <td>
+                  <span>{{ mostrarDetalleCampos(cambio) }}</span>
+                </td>
+                <td>
+                  {{ cambio.motivo || '-' }}
+                </td>
+                <td style="text-align:center;">
+                  <button 
+                    *ngIf="cambio.detalle_eliminado" 
+                    (click)="verDetalleEliminado(cambio)"
+                    class="btn-ver-detalle"
+                    style="background: #0891b2; color: white; border: none; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;">
+                    <i class="fas fa-eye"></i> Ver
+                  </button>
+                  <span *ngIf="!cambio.detalle_eliminado" style="color: #999;">-</span>
+                </td>
+                <td style="text-align:center;">
+                  {{ contarEdiciones(cambio.numerodeexpediente) }}
+                </td>
+              </tr>
+              <tr *ngIf="cambiosPaginados.length === 0">
+                <td colspan="8" style="text-align:center;color:#ff6600;">
+                  No hay registros
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <!-- Paginación -->
+          <div class="historial-paginacion">
+            <button [disabled]="paginaActual === 1" (click)="paginaAnterior()">Anterior</button>
+            <span>Página {{ paginaActual }} de {{ totalPaginas }}</span>
+            <button [disabled]="paginaActual === totalPaginas" (click)="paginaSiguiente()">Siguiente</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+<!-- MODAL DETALLE FLOTANTE Y SUPERPUESTO (fuera de la tabla) -->
+<div *ngIf="showModalDetalle" class="modal-overlay" (click)="cerrarModalDetalle()">
+  <div class="modal-content modal-big" (click)="$event.stopPropagation()">
+    <!-- Título + Botón cerrar -->
+    <div class="modal-header-wrapper">
+      <h2 class="detalle-ficha-titulo">
+        <i class="fas fa-file-alt"></i> DETALLE DE INSPECCIÓN
+      </h2>
+      <button class="btn-cerrar" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <!-- BODY DEL MODAL CON PADDING -->
+    <div class="modal-body-content">
+      <!-- DATOS DE INSPECCIÓN -->
+      <div class="detalle-section-title">Datos de Inspección</div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">N° Expediente</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.numerodeexpediente || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Nombres y Apellidos</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.nombres_apellidos || solicitudSeleccionada.solicitante || solicitudSeleccionada.nombres || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">DNI/CE</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.dni_ce || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Teléfonos</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.telefonos || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Correo</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.correo || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Inspector</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.inspector_asignado || solicitudSeleccionada.inspector || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Tipo ITSE</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.tipo_itse || solicitudSeleccionada.tipo_ecse || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Tipo de Trámite</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.tipo_tramite || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <!-- Estado: muestra "Eliminado" si fue borrado -->
+        <div class="detalle-label">Estado</div>
+        <div class="detalle-value">
+          {{ accionHistorialActual === 'Borrado' ? 'Eliminado' : (solicitudSeleccionada.estadoVisual || solicitudSeleccionada.estado || 'SIN DATO') }}
+        </div>
+      </div>
+      <div class="detalle-col">
+        <!-- Motivo de Rechazo: solo muestra si NO es borrado -->
+        <div class="detalle-label">Motivo de Rechazo</div>
+        <div class="detalle-value">
+          <ng-container *ngIf="accionHistorialActual !== 'Borrado'; else eliminadoMsg">
+            {{ solicitudSeleccionada.motivo_rechazo || 'SIN DATO' }}
+            <div *ngIf="solicitudSeleccionada.estadoVisual === 'RECHAZADA' && solicitudSeleccionada.motivo_rechazo" style="margin-top:7px;">
+              <span style="color:#e74c3c; font-weight:900;">({{ solicitudSeleccionada.motivo_rechazo }})</span>
+            </div>
+          </ng-container>
+          <ng-template #eliminadoMsg>
+            <span style="color:#888;">Solicitud eliminada.</span>
+          </ng-template>
+        </div>
+      </div>
+      <div class="detalle-col"></div>
+      <div class="detalle-col"></div>
+    </div>
+    <!-- DATOS DEL ESTABLECIMIENTO -->
+    <div class="detalle-section-title">Datos del Establecimiento</div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Razón Social</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.razon_social || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Nombre Comercial</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.nombre_comercial || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">RUC</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.ruc || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Dirección</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.direccion || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Referencia</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.referencia || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Localidad</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.localidad || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Distrito</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.distrito || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Provincia</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.provincia || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Departamento</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.departamento || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Tel. Establecimiento</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.telefonos_establecimiento || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Horario de Atención</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.horario_atencion || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Aforo</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.aforo_declarado || solicitudSeleccionada.aforo || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <!-- RIESGOS Y ÁREAS -->
+    <div class="detalle-section-title">Riesgos y Áreas</div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Giro/Actividades</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.giro_actividades || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Área Ocupada (m²)</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.area_ocupada || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Área Techada por Nivel (m²)</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.area_techada_por_nivel || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Área Terreno (m²)</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.area_terreno || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Área Libre (m²)</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.area_libre || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Piso Ubicado</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.piso_ubicado || 'SIN DATO' }}</div>
+      </div>
+    </div>
+    <div class="detalle-row">
+      <div class="detalle-col">
+        <div class="detalle-label">Número de Pisos</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.num_pisos || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col">
+        <div class="detalle-label">Nivel Riesgo Sugerido</div>
+        <div class="detalle-value">{{ solicitudSeleccionada.nivelRiesgoSugerido || solicitudSeleccionada.riesgo_incendio || 'SIN DATO' }}</div>
+      </div>
+      <div class="detalle-col"></div>
+    </div>
+    <!-- ARCHIVOS ADJUNTOS -->
+    <div class="detalle-section-title">Archivos Adjuntos</div>
+    <div class="detalle-row" style="flex-direction: column;">
+      <ng-container *ngIf="solicitudSeleccionada.archivos && solicitudSeleccionada.archivos.length > 0; else noFiles">
+        <div class="detalle-archivos-grid">
+          <div *ngFor="let archivo of solicitudSeleccionada.archivos" style="margin-bottom: 7px;">
+            <ng-container [ngSwitch]="archivo.archivo_tipo">
+              <img *ngSwitchCase="'imagen'" [src]="'http://localhost:3000'+archivo.archivo_url" class="detalle-img-file" loading="lazy" alt="Imagen">
+              <a *ngSwitchCase="'pdf'" [href]="'http://localhost:3000'+archivo.archivo_url" target="_blank" class="archivo-link detalle-pdf-link">
+                <i class="fas fa-file-pdf"></i> Ver PDF
+              </a>
+              <a *ngSwitchDefault [href]="'http://localhost:3000'+archivo.archivo_url" target="_blank" class="archivo-link">
+                <i class="fas fa-file"></i> {{ archivo.archivo_nombre || 'Archivo' }}
+              </a>
+            </ng-container>
+          </div>
+        </div>
+      </ng-container>
+      <ng-template #noFiles>
+        <span style="color:#888;">No hay archivos adjuntos</span>
+      </ng-template>
+    </div>
+    <!-- PANEL FOTOGRÁFICO: título y botón SOLO si hay fotos -->
+    <div *ngIf="solicitudSeleccionada.panelFotografico && solicitudSeleccionada.panelFotografico.length > 0" style="margin-top:30px;">
+      <div style="font-weight:600; color:#0891b2; font-size:20px; margin-bottom:10px;">Panel Fotográfico</div>
+      <button 
+        class="btn-panel-foto"
+        style="background:#0891b2; color:#fff; font-weight:600; border:none; padding:9px 22px; border-radius:7px; font-size:16px; margin-bottom:12px; cursor:pointer;"
+        (click)="panelFotograficoVisible = true"
+      >
+        <i class="fas fa-images"></i> Ver Panel Fotográfico
+      </button>
+    </div>
+    <!-- Botones de acción -->
+    </div>
+    <!-- FIN modal-body-content -->
+  </div>
+</div>

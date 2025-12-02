@@ -1,0 +1,306 @@
+<div class="historial-container">
+  <!-- HEADER -->
+  <div class="historial-header">
+    <div class="header-content">
+      <div class="header-icon">
+        <i class="fas fa-history"></i>
+      </div>
+      <div class="header-text">
+        <h1 class="historial-title">Historial de Inspecciones</h1>
+        <p class="historial-subtitle">Inspecciones finalizadas y aceptadas</p>
+      </div>
+    </div>
+    <div class="header-stats">
+      <div class="stat-card">
+        <i class="fas fa-check-circle"></i>
+        <div class="stat-info">
+          <span class="stat-number">{{ inspecciones.length }}</span>
+          <span class="stat-label">Finalizadas</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENEDOR PRINCIPAL ÚNICO -->
+  <div class="contenedor-principal">
+    <!-- FILTROS -->
+    <div class="filtros-section">
+    <div class="filtros-header">
+      <i class="fas fa-filter"></i>
+      <span>Filtros de Búsqueda</span>
+    </div>
+    <div class="filtros-grid">
+      <div class="filtro-item">
+        <label>
+          <i class="fas fa-file-alt"></i> Expediente
+        </label>
+        <input 
+          type="text" 
+          [(ngModel)]="filtroExpediente" 
+          (input)="filtrarInspecciones()"
+          placeholder="Buscar por expediente..."
+          class="filtro-input">
+      </div>
+      <div class="filtro-item">
+        <label>
+          <i class="fas fa-store"></i> Establecimiento
+        </label>
+        <input 
+          type="text" 
+          [(ngModel)]="filtroEstablecimiento" 
+          (input)="filtrarInspecciones()"
+          placeholder="Buscar por establecimiento..."
+          class="filtro-input">
+      </div>
+      <div class="filtro-item">
+        <button class="btn-limpiar" (click)="limpiarFiltros()">
+          <i class="fas fa-eraser"></i> Limpiar Filtros
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="tabla-section">
+    <div class="tabla-header">
+      <h3>
+        <i class="fas fa-list"></i> 
+        Inspecciones Finalizadas 
+        <span class="contador">({{ inspeccionesFiltradas.length }})</span>
+      </h3>
+    </div>
+
+    <div class="tabla-responsive">
+      <table class="tabla-historial">
+        <thead>
+          <tr>
+            <th><i class="fas fa-hashtag"></i> #</th>
+            <th><i class="fas fa-file-alt"></i> Expediente</th>
+            <th><i class="fas fa-store"></i> Establecimiento</th>
+            <th><i class="fas fa-map-marker-alt"></i> Dirección</th>
+            <th><i class="fas fa-calendar"></i> Fecha</th>
+            <th><i class="fas fa-check-circle"></i> Estado</th>
+            <th><i class="fas fa-images"></i> Fotos</th>
+            <th><i class="fas fa-cog"></i> Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let insp of inspeccionesPaginadas; let i = index" class="tabla-row">
+            <td class="td-numero">{{ (paginaActual - 1) * itemsPorPagina + i + 1 }}</td>
+            <td class="td-expediente">
+              <strong>{{ insp.numerodeexpediente }}</strong>
+            </td>
+            <td class="td-establecimiento">{{ insp.razon_social || 'N/A' }}</td>
+            <td class="td-direccion">{{ insp.direccion || insp.direccion_establecimiento || 'N/A' }}</td>
+            <td class="td-fecha">
+              {{ insp.fecha | date:'dd/MM/yyyy' }}
+            </td>
+            <td class="td-estado">
+              <span [class]="'badge ' + getEstadoBadgeClass(insp.estado)">
+                <i class="fas fa-check-circle"></i> {{ insp.estado }}
+              </span>
+            </td>
+            <td class="td-fotos text-center">
+              <span [class]="(insp.total_fotos > 0) ? 'badge-fotos' : 'badge-sin-fotos'">
+                <i [class]="(insp.total_fotos > 0) ? 'fas fa-images' : 'fas fa-image'"></i> 
+                {{ insp.total_fotos || 0 }} {{ (insp.total_fotos === 1) ? 'foto' : 'fotos' }}
+              </span>
+            </td>
+            <td class="td-acciones">
+              <button class="btn-ver-detalle" (click)="verDetalle(insp)" title="Ver Detalle">
+                <i class="fas fa-eye"></i> Ver
+              </button>
+            </td>
+          </tr>
+          
+          <!-- SI NO HAY DATOS -->
+          <tr *ngIf="inspeccionesPaginadas.length === 0">
+            <td colspan="8" class="td-sin-datos">
+              <div class="sin-datos">
+                <i class="fas fa-inbox"></i>
+                <p>No hay inspecciones finalizadas</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+      <!-- PAGINACIÓN -->
+      <div class="paginacion" *ngIf="totalPaginas > 1">
+        <button class="btn-pag" (click)="paginaAnterior()" [disabled]="paginaActual === 1">
+          <i class="fas fa-chevron-left"></i> Anterior
+        </button>
+        <span class="pag-info">
+          Página {{ paginaActual }} de {{ totalPaginas }}
+        </span>
+        <button class="btn-pag" (click)="paginaSiguiente()" [disabled]="paginaActual >= totalPaginas">
+          Siguiente <i class="fas fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VER DETALLE -->
+<div class="modal-overlay-historial" *ngIf="mostrarModalDetalle" (click)="cerrarModalDetalle()">
+  <div class="modal-content-historial" (click)="$event.stopPropagation()">
+    <div class="modal-header-historial">
+      <h2>
+        <i class="fas fa-file-alt"></i> 
+        Detalle de Inspección
+      </h2>
+      <button class="btn-cerrar" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-historial">
+      <!-- DEBUG: Mostrar estado de carga -->
+      <div *ngIf="!inspeccionSeleccionada" style="padding: 40px; text-align: center;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #1B5E5E;"></i>
+        <p style="margin-top: 20px; font-size: 16px; color: #64748B;">Cargando detalle...</p>
+      </div>
+
+      <!-- CONTENIDO DEL DETALLE -->
+      <div *ngIf="inspeccionSeleccionada">
+      <!-- INFORMACIÓN GENERAL -->
+      <div class="detalle-section">
+        <h3 class="section-title">
+          <i class="fas fa-info-circle"></i> Información General
+        </h3>
+        <div class="detalle-grid">
+          <div class="detalle-item">
+            <label>Expediente:</label>
+            <span>{{ inspeccionSeleccionada.numerodeexpediente }}</span>
+          </div>
+          <div class="detalle-item">
+            <label>Estado:</label>
+            <span [class]="'badge ' + getEstadoBadgeClass(inspeccionSeleccionada.estado)">
+              {{ inspeccionSeleccionada.estado }}
+            </span>
+          </div>
+          <div class="detalle-item">
+            <label>Fecha de Inspección:</label>
+            <span>{{ inspeccionSeleccionada.fecha | date:'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="detalle-item">
+            <label>Inspector:</label>
+            <span>{{ inspeccionSeleccionada.inspector_asignado || 'N/A' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DATOS DEL ESTABLECIMIENTO -->
+      <div class="detalle-section">
+        <h3 class="section-title">
+          <i class="fas fa-store"></i> Datos del Establecimiento
+        </h3>
+        <div class="detalle-grid">
+          <div class="detalle-item full-width">
+            <label>Razón Social:</label>
+            <span>{{ inspeccionSeleccionada.razon_social || 'N/A' }}</span>
+          </div>
+          <div class="detalle-item">
+            <label>RUC:</label>
+            <span>{{ inspeccionSeleccionada.ruc || 'N/A' }}</span>
+          </div>
+          <div class="detalle-item">
+            <label>Giro:</label>
+            <span>{{ inspeccionSeleccionada.giro_actividades || 'N/A' }}</span>
+          </div>
+          <div class="detalle-item full-width">
+            <label>Dirección:</label>
+            <span>{{ inspeccionSeleccionada.direccion || 'N/A' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL FOTOGRÁFICO -->
+      <div class="detalle-section panel-fotografico-section">
+        <h3 class="section-title">
+          <i class="fas fa-images"></i> Panel Fotográfico
+          <span class="fotos-count">({{ panelFotografico.length }} fotos)</span>
+        </h3>
+        
+        <div *ngIf="panelFotografico.length > 0">
+          <button class="btn-ver-panel" (click)="abrirPanelFotografico()">
+            <i class="fas fa-expand"></i> Ver Panel Completo
+          </button>
+          
+          <!-- PREVIEW DE FOTOS -->
+          <div class="fotos-preview-grid">
+            <div class="foto-preview-item" *ngFor="let foto of panelFotografico.slice(0, 4)">
+              <img [src]="foto.imagen_url" [alt]="foto.descripcion" class="foto-preview-img">
+              <div class="foto-preview-info">
+                <span class="foto-descripcion">{{ foto.descripcion || 'Sin descripción' }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <p class="fotos-mas" *ngIf="panelFotografico.length > 4">
+            + {{ panelFotografico.length - 4 }} foto(s) más
+          </p>
+        </div>
+        
+        <div *ngIf="panelFotografico.length === 0" class="sin-fotos">
+          <i class="fas fa-image-slash"></i>
+          <p>No hay fotos disponibles</p>
+        </div>
+      </div>
+      </div>
+      <!-- FIN CONTENIDO DEL DETALLE -->
+    </div>
+
+    <div class="modal-footer-historial">
+      <button class="btn-imprimir" (click)="imprimirDetalle()">
+        <i class="fas fa-print"></i> Imprimir
+      </button>
+      <button class="btn-cerrar-modal" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PANEL FOTOGRÁFICO COMPLETO -->
+<div class="modal-overlay-panel" *ngIf="modalPanelFotograficoVisible" (click)="cerrarPanelFotografico()">
+  <div class="modal-content-panel" (click)="$event.stopPropagation()">
+    <div class="modal-header-panel">
+      <h2>
+        <i class="fas fa-images"></i> 
+        Panel Fotográfico Completo
+      </h2>
+      <button class="btn-cerrar" (click)="cerrarPanelFotografico()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-panel">
+      <div class="panel-grid">
+        <div class="panel-foto-item" *ngFor="let foto of panelFotografico; let i = index">
+          <div class="foto-numero">Foto #{{ i + 1 }}</div>
+          <img [src]="foto.imagen_url" [alt]="foto.descripcion" class="panel-foto-img">
+          <div class="foto-info">
+            <p class="foto-descripcion-full">
+              <strong>Descripción:</strong> {{ foto.descripcion || 'Sin descripción' }}
+            </p>
+            <p class="foto-cumple">
+              <strong>Cumple:</strong> 
+              <span [class]="foto.cumple === 1 || foto.cumple === true || foto.cumple === 'Si' || foto.cumple === 'SI' ? 'cumple-si' : 'cumple-no'">
+                {{ (foto.cumple === 1 || foto.cumple === true || foto.cumple === 'Si' || foto.cumple === 'SI') ? 'SÍ' : 'NO' }}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer-panel">
+      <button class="btn-cerrar-panel" (click)="cerrarPanelFotografico()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+  </div>
+</div>
+

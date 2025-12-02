@@ -1,0 +1,164 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║        🎨 VISTA PREVIA - LOGIN CON GLASSMORPHISM 🎨             ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+┌──────────────────────────────────────────────────────────────────┐
+│                                                                  │
+│  [FONDO: Imagen de Huanchaco con overlay oscuro]                │
+│                                                                  │
+│                                      ┌────────────────┐          │
+│                                      │   GESTISEC     │          │
+│                                      │  Sistema ITSE  │          │
+│                                      └────────────────┘          │
+│                                                                  │
+│                   ┌─────────────────────────┐                   │
+│                   │                         │                   │
+│                   │   ╭───────────────╮     │                   │
+│                   │   │    🏛️ LOGO    │     │ ← Logo circular   │
+│                   │   │   DEFENSA     │     │   con sombra      │
+│                   │   │    CIVIL      │     │                   │
+│                   │   ╰───────────────╯     │                   │
+│                   │                         │                   │
+│                   │   Iniciar Sesión        │ ← Título blanco   │
+│                   │                         │                   │
+│                   │ ┌─────────────────────┐ │                   │
+│                   │ │ ⚠️ Error aquí       │ │ ← Solo si error   │
+│                   │ └─────────────────────┘ │                   │
+│                   │                         │                   │
+│                   │   Usuario               │                   │
+│                   │   [ingresa usuario]     │                   │
+│                   │   ___________________   │ ← Underline       │
+│                   │                         │                   │
+│                   │   Contraseña        👁️ │                   │
+│                   │   [ingresa pass]        │                   │
+│                   │   ___________________   │                   │
+│                   │                         │                   │
+│                   │   Rol                   │                   │
+│                   │   [Selecciona]      ▼   │                   │
+│                   │   ___________________   │                   │
+│                   │                         │                   │
+│                   │   ☑️ Recordarme         │                   │
+│                   │         ¿Olvidaste?     │                   │
+│                   │                         │                   │
+│                   │ ┌─────────────────────┐ │                   │
+│                   │ │  INICIAR SESIÓN     │ │ ← Botón naranja   │
+│                   │ │   [Gradiente 🔥]    │ │   con gradiente   │
+│                   │ └─────────────────────┘ │                   │
+│                   │                         │                   │
+│                   │  © 2025 Municipalidad   │                   │
+│                   │  Huanchaco - ¿Ayuda?    │                   │
+│                   │                         │                   │
+│                   └─────────────────────────┘                   │
+│                        ↑                                         │
+│                   Card Glassmorphism                             │
+│              (Vidrio esmerilado semi-transparente)              │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════
+                        🎨 CARACTERÍSTICAS
+═══════════════════════════════════════════════════════════════════
+
+✅ FONDO:
+   → Imagen de Huanchaco (huanchaco_logo.jpg)
+   → Overlay oscuro semi-transparente
+   → Efecto de profundidad
+
+✅ CARD:
+   → Glassmorphism (vidrio esmerilado)
+   → Fondo: rgba(255, 255, 255, 0.08)
+   → Blur: 20px
+   → Semi-transparente
+
+✅ LOGO:
+   → Círculo blanco 100x100px
+   → Defensa Civil dentro
+   → Sombra pronunciada
+   → Animación de entrada
+
+✅ MARCA "GESTISEC":
+   → Esquina superior derecha
+   → Texto grande y bold
+   → "Sistema ITSE" debajo
+   → Semi-transparente
+
+✅ INPUTS:
+   → Estilo underline (solo línea abajo)
+   → Fondo transparente
+   → Focus naranja #FF6838
+   → Minimalistas
+
+✅ BOTÓN:
+   → Gradiente naranja
+   → Sombra naranja
+   → Hover: sube 2px
+   → Efecto de brillo
+   → Uppercase
+
+✅ TOGGLE CONTRASEÑA:
+   → Ojo en la derecha
+   → Click para mostrar/ocultar
+   → Color naranja al hover
+
+═══════════════════════════════════════════════════════════════════
+                        🚀 CÓMO INICIAR
+═══════════════════════════════════════════════════════════════════
+
+1. Abrir terminal en el proyecto
+
+2. Ejecutar:
+   ng serve
+
+3. Abrir navegador:
+   http://localhost:4200
+
+4. ¡Verás el nuevo diseño!
+
+═══════════════════════════════════════════════════════════════════
+                        🎯 COLORES PRINCIPALES
+═══════════════════════════════════════════════════════════════════
+
+🔶 Primario:    #FF6838 (Naranja)
+⚪ Card:        rgba(255,255,255,0.08) (Blanco 8%)
+⚫ Overlay:     rgba(0,0,0,0.7) (Negro 70%)
+🟢 Focus:       #FF6838 (Naranja)
+⚪ Texto:       #FFFFFF (Blanco)
+
+═══════════════════════════════════════════════════════════════════
+                        💫 ANIMACIONES
+═══════════════════════════════════════════════════════════════════
+
+1. Card → Entra desde abajo (slideUp)
+2. Logo → Escala desde 0 a 1 (scaleIn)
+3. Marca → Entra desde la derecha (fadeInRight)
+4. Botón → Sube al hover + efecto brillo
+5. Loading → Spinner giratorio
+
+═══════════════════════════════════════════════════════════════════
+                        📱 RESPONSIVE
+═══════════════════════════════════════════════════════════════════
+
+💻 Desktop (>768px):
+   - Card: 420px
+   - Logo: 100x100px
+   - Todo espaciado
+
+📱 Tablet (768px):
+   - Card: 95% width
+   - Logo: 80x80px
+   - Marca más pequeña
+
+📱 Mobile (480px):
+   - Card: 95% width
+   - Logo: 70x70px
+   - Compacto
+
+═══════════════════════════════════════════════════════════════════
+
+          ¡DISEÑO PROFESIONAL TIPO FINTECH IMPLEMENTADO! 🎉
+
+═══════════════════════════════════════════════════════════════════
+

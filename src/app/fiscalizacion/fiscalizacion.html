@@ -1,0 +1,957 @@
+<div class="reportes-container">
+  <!-- HEADER -->
+  <div class="reportes-header">
+    <div class="header-title">
+      <i class="fas fa-clipboard-check"></i>
+      <h2>GESTIÓN DE FISCALIZACIONES</h2>
+    </div>
+    
+    <div class="header-filters">
+      <select [(ngModel)]="filtroEstado" (ngModelChange)="aplicarFiltros()" class="filter-select">
+        <option value="">Todos los estados</option>
+        <option *ngFor="let estado of estados" [value]="estado">{{ estado }}</option>
+      </select>
+      
+      <select [(ngModel)]="filtroOrigen" (ngModelChange)="aplicarFiltros()" class="filter-select">
+        <option value="">Todos los orígenes</option>
+        <option *ngFor="let origen of origenes" [value]="origen">{{ origen }}</option>
+      </select>
+
+      <input 
+        type="text" 
+        [(ngModel)]="filtroInspector" 
+        (input)="aplicarFiltros()" 
+        placeholder="Filtrar por inspector..."
+        class="filter-input"
+      />
+      
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input 
+          type="text" 
+          [(ngModel)]="filtroBusqueda" 
+          (input)="aplicarFiltros()" 
+          placeholder="Buscar expediente..."
+          class="search-input"
+        />
+    </div>
+
+      <button class="btn-exportar" (click)="abrirModalCrear()">
+        <i class="fas fa-plus-circle"></i> Nueva
+      </button>
+      
+      <button 
+        *ngIf="fiscalizacionesSeleccionadas.length > 0" 
+        class="btn-exportar" 
+        style="background: #10B981;"
+        (click)="abrirMapaRecorrido()">
+        <i class="fas fa-route"></i> Ver Recorrido ({{ fiscalizacionesSeleccionadas.length }})
+      </button>
+      
+      <button 
+        *ngIf="fiscalizacionesSeleccionadas.length > 0" 
+        class="btn-exportar" 
+        style="background: #6B7280;"
+        (click)="limpiarSeleccion()">
+        <i class="fas fa-times"></i> Limpiar Selección
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="tabla-wrapper">
+    <table class="reportes-table">
+      <thead>
+        <tr>
+          <th style="width: 40px;">
+            <input 
+              type="checkbox" 
+              [checked]="todasSeleccionadas"
+              (change)="seleccionarTodas()"
+              title="Seleccionar todas">
+          </th>
+          <th>N° FISCALIZACIÓN</th>
+          <th>FECHA</th>
+          <th>ORIGEN</th>
+          <th>RAZÓN SOCIAL</th>
+          <th>TIPO INFRACCIÓN</th>
+          <th>GRAVEDAD</th>
+          <th>ESTADO</th>
+          <th>INSPECTOR</th>
+          <th>ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let fisc of fiscalizacionesPaginadas" class="tabla-row" [class.row-selected]="estaSeleccionada(fisc.id)">
+          <td style="text-align: center;">
+            <input 
+              type="checkbox" 
+              [checked]="estaSeleccionada(fisc.id)"
+              (change)="toggleSeleccionFiscalizacion(fisc.id)"
+              title="Seleccionar para recorrido">
+          </td>
+          <td><strong style="color: #1B5E5E;">{{ fisc.numero_fiscalizacion }}</strong></td>
+          <td class="td-fecha">{{ formatearFecha(fisc.fecha_fiscalizacion) }}</td>
+          <td><span class="badge-riesgo badge-origen">{{ fisc.origen }}</span></td>
+          <td class="td-solicitante">{{ fisc.razon_social }}</td>
+          <td>{{ fisc.tipo_infraccion }}</td>
+          <td><span [class]="'badge-riesgo ' + getClaseGravedad(fisc.gravedad)">{{ fisc.gravedad }}</span></td>
+          <td><span [class]="'badge-estado ' + getClaseEstado(fisc.estado)">{{ fisc.estado }}</span></td>
+          <td class="td-inspector">{{ fisc.inspector_nombre || '-' }}</td>
+          <td class="td-acciones">
+            <div class="acciones-grupo">
+              <button class="btn-accion btn-ver" title="Ver Detalles" (click)="abrirModalDetalle(fisc)">
+              <i class="fas fa-eye"></i>
+            </button>
+              <button class="btn-accion btn-editar" title="Editar" (click)="abrirModalEditar(fisc)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-accion btn-eliminar-tabla" title="Eliminar" (click)="eliminarFiscalizacion(fisc)">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        
+        <tr *ngIf="fiscalizacionesPaginadas.length === 0">
+          <td colspan="10" class="no-datos">
+            <i class="fas fa-inbox"></i>
+            <p>No hay fiscalizaciones disponibles</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- PAGINACIÓN -->
+  <div class="reportes-paginacion" *ngIf="totalPaginas > 1">
+    <button class="pag-btn" [disabled]="paginaActual === 1" (click)="cambiarPagina(paginaActual - 1)">
+      <i class="fas fa-chevron-left"></i>
+      </button>
+
+    <div style="color: #64748B; font-size: 14px; font-weight: 600; padding: 0 20px;">
+      Página {{ paginaActual }} de {{ totalPaginas }}
+    </div>
+    
+    <button class="pag-btn" [disabled]="paginaActual === totalPaginas" (click)="cambiarPagina(paginaActual + 1)">
+      <i class="fas fa-chevron-right"></i>
+    </button>
+    </div>
+  </div>
+
+<!-- MODAL CREAR FISCALIZACIÓN -->
+<div *ngIf="mostrarModalCrear" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header-custom">
+      <h3><i class="fas fa-plus-circle"></i> Nueva Fiscalización</h3>
+      <button class="btn-close-modal" (click)="cerrarModalCrear()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-custom">
+      <div class="form-grid-custom">
+        <!-- INFORMACIÓN BÁSICA -->
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar"></i> Fecha de Fiscalización</label>
+          <input type="date" [(ngModel)]="nuevaFiscalizacion.fecha_fiscalizacion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-tag"></i> Origen</label>
+          <select [(ngModel)]="nuevaFiscalizacion.origen" class="form-input-custom">
+            <option *ngFor="let origen of origenes" [value]="origen">{{ origen }}</option>
+          </select>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-folder"></i> Expediente Relacionado</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.expediente_relacionado" class="form-input-custom" placeholder="N° Expediente">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-flag"></i> Estado</label>
+          <select [(ngModel)]="nuevaFiscalizacion.estado" class="form-input-custom">
+            <option *ngFor="let estado of estados" [value]="estado">{{ estado }}</option>
+          </select>
+        </div>
+
+        <!-- DATOS DEL ESTABLECIMIENTO -->
+        <div class="form-group-custom full-width" style="background: rgba(27, 94, 94, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0;">
+              <i class="fas fa-store-alt"></i> Datos del Establecimiento
+            </h4>
+            <button type="button" class="btn-seleccionar-local" (click)="abrirSelectorLocales()">
+              <i class="fas fa-list"></i> Cargar desde Local Existente
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-building"></i> Razón Social</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.razon_social" class="form-input-custom" placeholder="Nombre del establecimiento">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-id-card"></i> RUC</label>
+          <div class="input-with-button">
+            <input type="text" [(ngModel)]="nuevaFiscalizacion.ruc" class="form-input-custom" placeholder="20123456789" maxlength="11" style="flex: 1;">
+            <button type="button" class="btn-buscar-api" (click)="consultarSunatPorRuc()">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-store"></i> Giro del Negocio</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.giro" class="form-input-custom" placeholder="Ej: Restaurante">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-map-marker-alt"></i> Dirección</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.direccion" class="form-input-custom" placeholder="Dirección completa">
+        </div>
+
+        <!-- BOTÓN PARA SELECCIONAR UBICACIÓN -->
+        <div class="form-group-custom full-width" style="margin-bottom: 15px;">
+          <button type="button" class="btn-map-custom" (click)="abrirMapa()">
+            <i class="fas fa-map-marked-alt"></i> Seleccionar Ubicación en el Mapa
+          </button>
+          <span *ngIf="nuevaFiscalizacion.latitud && nuevaFiscalizacion.longitud" class="ubicacion-info">
+            ✓ Ubicación guardada: {{ nuevaFiscalizacion.latitud?.toFixed(6) }}, {{ nuevaFiscalizacion.longitud?.toFixed(6) }}
+          </span>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-user-tie"></i> Inspector (Nombre)</label>
+          <input 
+            type="text" 
+            [(ngModel)]="nuevaFiscalizacion.inspector_nombre" 
+            placeholder="Nombre del inspector asignado"
+            class="form-input-custom"
+          />
+        </div>
+
+        <!-- INFRACCIÓN -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-exclamation-triangle"></i> Datos de la Infracción
+          </h4>
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-exclamation-triangle"></i> Tipo de Infracción</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.tipo_infraccion" class="form-input-custom" placeholder="Ej: Falta de extintor">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-file-alt"></i> Descripción de la Infracción</label>
+          <textarea [(ngModel)]="nuevaFiscalizacion.descripcion_infraccion" class="form-textarea-custom" rows="3" placeholder="Describa detalladamente..."></textarea>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-code"></i> Código de Infracción</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.codigo_infraccion" class="form-input-custom" placeholder="INF-001">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-gavel"></i> Base Legal</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.base_legal" class="form-input-custom" placeholder="Ley/Ordenanza">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-signal"></i> Gravedad</label>
+          <select [(ngModel)]="nuevaFiscalizacion.gravedad" class="form-input-custom">
+            <option *ngFor="let grav of gravedades" [value]="grav">{{ grav }}</option>
+          </select>
+        </div>
+
+        <!-- DOCUMENTACIÓN Y MEDIDAS -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-file-contract"></i> Documentación y Medidas
+          </h4>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-file-signature"></i> Acta N°</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.acta_numero" class="form-input-custom" placeholder="ACTA-001-2025">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-envelope"></i> Notificación N°</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.notificacion_numero" class="form-input-custom" placeholder="NOT-001-2025">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-money-bill-wave"></i> Monto Multa (S/)</label>
+          <input type="number" [(ngModel)]="nuevaFiscalizacion.monto_multa" class="form-input-custom" step="0.01" placeholder="0.00">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-clock"></i> Plazo Subsanación (días)</label>
+          <input type="number" [(ngModel)]="nuevaFiscalizacion.plazo_subsanacion" class="form-input-custom" placeholder="15">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-hammer"></i> Medida Adoptada</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.medida_adoptada" class="form-input-custom" placeholder="Notificación, cierre temporal, multa, etc.">
+        </div>
+
+        <!-- FECHAS -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-calendar-alt"></i> Fechas de Seguimiento
+          </h4>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar-check"></i> Fecha Notificación</label>
+          <input type="date" [(ngModel)]="nuevaFiscalizacion.fecha_notificacion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar-times"></i> Fecha Límite Subsanación</label>
+          <input type="date" [(ngModel)]="nuevaFiscalizacion.fecha_limite_subsanacion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar-plus"></i> Fecha Reinspección</label>
+          <input type="date" [(ngModel)]="nuevaFiscalizacion.fecha_reinspeccion" class="form-input-custom">
+        </div>
+
+        <!-- RESULTADO Y OBSERVACIONES -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-clipboard-check"></i> Resultado y Observaciones
+          </h4>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-check-circle"></i> Resultado Final</label>
+          <input type="text" [(ngModel)]="nuevaFiscalizacion.resultado_final" class="form-input-custom" placeholder="Subsanado, Multado, etc.">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-comment"></i> Observaciones</label>
+          <textarea [(ngModel)]="nuevaFiscalizacion.observaciones" class="form-textarea-custom" rows="3" placeholder="Observaciones adicionales..."></textarea>
+        </div>
+        </div>
+        </div>
+
+    <div class="modal-footer-custom">
+      <button class="btn-modal-cancel" (click)="cerrarModalCrear()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn-modal-save" (click)="crearFiscalizacion()">
+        <i class="fas fa-save"></i> Crear Fiscalización
+      </button>
+      </div>
+        </div>
+      </div>
+
+<!-- MODAL DETALLE FISCALIZACIÓN -->
+<div *ngIf="mostrarModalDetalle && fiscalizacionSeleccionada" class="modal-overlay">
+  <div class="modal-content modal-detalle-large">
+    <div class="modal-header-custom">
+      <h3><i class="fas fa-info-circle"></i> {{ fiscalizacionSeleccionada.numero_fiscalizacion }}</h3>
+      <button class="btn-close-modal" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i>
+      </button>
+      </div>
+
+    <div class="modal-body-custom">
+      <!-- INFORMACIÓN GENERAL -->
+      <div class="detalle-section-custom">
+        <h4 class="section-title-custom"><i class="fas fa-info-circle"></i> INFORMACIÓN GENERAL</h4>
+        <div class="detalle-grid-custom">
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">N° Fiscalización:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.numero_fiscalizacion }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Fecha:</label>
+            <div class="detalle-value-custom">{{ formatearFecha(fiscalizacionSeleccionada.fecha_fiscalizacion) }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Origen:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.origen }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Estado:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.estado }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Expediente:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.expediente_relacionado || '-' }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Inspector:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.inspector_nombre || '-' }}</div>
+      </div>
+    </div>
+  </div>
+
+      <!-- DATOS DEL ESTABLECIMIENTO -->
+      <div class="detalle-section-custom">
+        <h4 class="section-title-custom"><i class="fas fa-building"></i> DATOS DEL ESTABLECIMIENTO</h4>
+        <div class="detalle-grid-custom">
+          <div class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Razón Social:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.razon_social }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">RUC:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.ruc || '-' }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Giro/Actividades:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.giro || '-' }}</div>
+          </div>
+          <div class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Dirección:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.direccion }}</div>
+          </div>
+          
+          <!-- UBICACIÓN GPS -->
+          <div *ngIf="fiscalizacionSeleccionada.latitud && fiscalizacionSeleccionada.longitud" class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Ubicación GPS:</label>
+            <div class="detalle-value-custom ubicacion-gps-detalle">
+              <div class="coordenadas-detalle">
+                <span><strong>Lat:</strong> {{ fiscalizacionSeleccionada.latitud?.toFixed(6) || 'N/A' }}</span>
+                <span><strong>Lng:</strong> {{ fiscalizacionSeleccionada.longitud?.toFixed(6) || 'N/A' }}</span>
+              </div>
+              <a [href]="obtenerEnlaceGoogleMaps(fiscalizacionSeleccionada.latitud, fiscalizacionSeleccionada.longitud)" 
+                 target="_blank" 
+                 class="btn-google-maps">
+                <i class="fab fa-google"></i> Abrir en Google Maps
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INFRACCIÓN -->
+      <div class="detalle-section-custom">
+        <h4 class="section-title-custom"><i class="fas fa-exclamation-triangle"></i> DATOS DE LA INFRACCIÓN</h4>
+        <div class="detalle-grid-custom">
+          <div class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Tipo de Infracción:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.tipo_infraccion }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Código:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.codigo_infraccion || '-' }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Base Legal:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.base_legal || '-' }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Gravedad:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.gravedad }}</div>
+          </div>
+          <div class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Descripción:</label>
+            <div class="detalle-description-custom">{{ fiscalizacionSeleccionada.descripcion_infraccion }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTACIÓN Y MEDIDAS -->
+      <div class="detalle-section-custom">
+        <h4 class="section-title-custom"><i class="fas fa-file-contract"></i> DOCUMENTACIÓN Y MEDIDAS</h4>
+        <div class="detalle-grid-custom">
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Acta N°:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.acta_numero || '-' }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Notificación N°:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.notificacion_numero || '-' }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Monto Multa:</label>
+            <div class="detalle-value-custom">{{ formatearMoneda(fiscalizacionSeleccionada.monto_multa) }}</div>
+          </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Plazo Subsanación:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.plazo_subsanacion || '0' }} días</div>
+          </div>
+          <div class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Medida Adoptada:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.medida_adoptada || '-' }}</div>
+          </div>
+        </div>
+        </div>
+
+      <!-- FECHAS DE SEGUIMIENTO -->
+      <div class="detalle-section-custom">
+        <h4 class="section-title-custom"><i class="fas fa-calendar-alt"></i> FECHAS DE SEGUIMIENTO</h4>
+        <div class="detalle-grid-custom">
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Fecha Notificación:</label>
+            <div class="detalle-value-custom">{{ formatearFecha(fiscalizacionSeleccionada.fecha_notificacion) }}</div>
+        </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Límite Subsanación:</label>
+            <div class="detalle-value-custom">{{ formatearFecha(fiscalizacionSeleccionada.fecha_limite_subsanacion) }}</div>
+        </div>
+          <div class="detalle-item-custom">
+            <label class="detalle-label-custom">Fecha Reinspección:</label>
+            <div class="detalle-value-custom">{{ formatearFecha(fiscalizacionSeleccionada.fecha_reinspeccion) }}</div>
+        </div>
+        </div>
+        </div>
+
+      <!-- RESULTADO FINAL -->
+      <div class="detalle-section-custom">
+        <h4 class="section-title-custom"><i class="fas fa-clipboard-check"></i> RESULTADO FINAL</h4>
+        <div class="detalle-grid-custom">
+          <div class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Resultado:</label>
+            <div class="detalle-value-custom">{{ fiscalizacionSeleccionada.resultado_final || '-' }}</div>
+        </div>
+        </div>
+        </div>
+
+      <!-- OBSERVACIONES -->
+      <div class="detalle-section-custom" *ngIf="fiscalizacionSeleccionada.observaciones">
+        <h4 class="section-title-custom"><i class="fas fa-comment"></i> OBSERVACIONES</h4>
+        <div class="detalle-grid-custom">
+          <div class="detalle-item-custom full-width">
+            <label class="detalle-label-custom">Observaciones:</label>
+            <div class="detalle-description-custom">{{ fiscalizacionSeleccionada.observaciones }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACCIONES PDF Y ALERTAS -->
+      <div class="acciones-pdf-container">
+        <button class="btn-pdf-custom" (click)="generarActaPDF(fiscalizacionSeleccionada)">
+          <i class="fas fa-file-pdf"></i> Acta PDF
+        </button>
+        <button class="btn-pdf-custom" (click)="generarNotificacionPDF(fiscalizacionSeleccionada)">
+          <i class="fas fa-file-pdf"></i> Notificación PDF
+        </button>
+        <button class="btn-alerta-custom" (click)="enviarAlerta(fiscalizacionSeleccionada)">
+          <i class="fas fa-bell"></i> Enviar Alerta
+        </button>
+        </div>
+
+      <!-- EVIDENCIAS FOTOGRÁFICAS -->
+      <div class="evidencias-container-custom">
+        <h4 class="section-title-custom"><i class="fas fa-images"></i> Evidencias Fotográficas</h4>
+        
+        <div class="upload-evidencias-custom">
+          <label for="fileUploadInput" class="file-label-custom" style="cursor: pointer; padding: 8px 16px; background: #4a90e2; color: white; border-radius: 4px; display: inline-block;">
+            <i class="fas fa-folder-open"></i> Seleccionar Archivos
+          </label>
+          <input 
+            id="fileUploadInput"
+            type="file" 
+            #fileInput 
+            multiple 
+            accept="image/*,application/pdf" 
+            (change)="onFileSelected($event)" 
+            class="file-input-custom"
+            style="display: none;"
+          >
+          <span class="archivos-info" *ngIf="archivosSeleccionados && archivosSeleccionados.length > 0" style="margin: 0 10px; color: #27ae60; font-weight: bold;">
+            ✓ {{ archivosSeleccionados.length }} archivo(s) seleccionado(s)
+          </span>
+          <button class="btn-upload-custom" (click)="subirEvidencias()" [disabled]="!archivosSeleccionados || archivosSeleccionados.length === 0">
+            <i class="fas fa-upload"></i> Subir Evidencias
+          </button>
+        </div>
+
+        <div class="galeria-evidencias-custom" *ngIf="evidencias.length > 0">
+          <div class="evidencia-item-custom" *ngFor="let ev of evidencias">
+            <img [src]="ev.ruta_archivo" [alt]="ev.descripcion || 'Evidencia'">
+            <div class="evidencia-overlay-custom">
+              <p>{{ ev.nombre_archivo }}</p>
+              <p><small>{{ ev.descripcion || 'Sin descripción' }}</small></p>
+              <button class="btn-delete-evidencia-custom" (click)="eliminarEvidencia(ev.id)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+        </div>
+      </div>
+
+        <div *ngIf="evidencias.length === 0" class="no-evidencias-custom">
+          <i class="fas fa-image"></i>
+          <p>No hay evidencias fotográficas adjuntas</p>
+        </div>
+      </div>
+        </div>
+
+    <div class="modal-footer-custom">
+      <button class="btn-modal-cancel" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+          </div>
+        </div>
+
+<!-- MODAL EDITAR FISCALIZACIÓN -->
+<div *ngIf="mostrarModalEditar && fiscalizacionSeleccionada" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header-custom">
+      <h3><i class="fas fa-edit"></i> Editar Fiscalización</h3>
+      <button class="btn-close-modal" (click)="cerrarModalEditar()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-custom">
+      <div class="form-grid-custom">
+        <!-- INFORMACIÓN BÁSICA -->
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar"></i> Fecha Fiscalización</label>
+          <input type="date" [(ngModel)]="fiscalizacionSeleccionada.fecha_fiscalizacion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-tag"></i> Origen</label>
+          <select [(ngModel)]="fiscalizacionSeleccionada.origen" class="form-input-custom">
+            <option *ngFor="let origen of origenes" [value]="origen">{{ origen }}</option>
+          </select>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-folder"></i> Expediente</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.expediente_relacionado" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-flag"></i> Estado</label>
+          <select [(ngModel)]="fiscalizacionSeleccionada.estado" class="form-input-custom">
+            <option *ngFor="let estado of estados" [value]="estado">{{ estado }}</option>
+          </select>
+        </div>
+
+        <!-- DATOS DEL ESTABLECIMIENTO -->
+        <div class="form-group-custom full-width" style="background: rgba(27, 94, 94, 0.05); padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0;">
+              <i class="fas fa-store-alt"></i> Datos del Establecimiento
+            </h4>
+            <button type="button" class="btn-seleccionar-local" (click)="abrirSelectorLocales()">
+              <i class="fas fa-list"></i> Cargar desde Local Existente
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-building"></i> Razón Social</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.razon_social" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-id-card"></i> RUC</label>
+          <div class="input-with-button">
+            <input type="text" [(ngModel)]="fiscalizacionSeleccionada.ruc" class="form-input-custom" maxlength="11" style="flex: 1;">
+            <button type="button" class="btn-buscar-api" (click)="consultarSunatPorRuc()">
+              <i class="fas fa-search"></i> Buscar
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-store"></i> Giro</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.giro" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-map-marker-alt"></i> Dirección</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.direccion" class="form-input-custom">
+        </div>
+
+        <!-- BOTÓN PARA SELECCIONAR UBICACIÓN -->
+        <div class="form-group-custom full-width" style="margin-bottom: 15px;">
+          <button type="button" class="btn-map-custom" (click)="abrirMapa()">
+            <i class="fas fa-map-marked-alt"></i> Seleccionar Ubicación en el Mapa
+          </button>
+          <span *ngIf="fiscalizacionSeleccionada.latitud && fiscalizacionSeleccionada.longitud" class="ubicacion-info">
+            ✓ Ubicación guardada: {{ latitudFormateada }}, {{ longitudFormateada }}
+          </span>
+        </div>
+
+        <!-- INFRACCIÓN -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-exclamation-triangle"></i> Infracción
+          </h4>
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-exclamation-triangle"></i> Tipo de Infracción</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.tipo_infraccion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-file-alt"></i> Descripción</label>
+          <textarea [(ngModel)]="fiscalizacionSeleccionada.descripcion_infraccion" class="form-textarea-custom" rows="3"></textarea>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-code"></i> Código</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.codigo_infraccion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-gavel"></i> Base Legal</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.base_legal" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-signal"></i> Gravedad</label>
+          <select [(ngModel)]="fiscalizacionSeleccionada.gravedad" class="form-input-custom">
+            <option *ngFor="let grav of gravedades" [value]="grav">{{ grav }}</option>
+          </select>
+        </div>
+
+        <!-- DOCUMENTACIÓN Y MEDIDAS -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-file-contract"></i> Documentación
+          </h4>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-file-signature"></i> Acta N°</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.acta_numero" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-envelope"></i> Notificación N°</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.notificacion_numero" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-money-bill-wave"></i> Monto Multa (S/)</label>
+          <input type="number" [(ngModel)]="fiscalizacionSeleccionada.monto_multa" class="form-input-custom" step="0.01">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-clock"></i> Plazo Subsanación (días)</label>
+          <input type="number" [(ngModel)]="fiscalizacionSeleccionada.plazo_subsanacion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-hammer"></i> Medida Adoptada</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.medida_adoptada" class="form-input-custom">
+        </div>
+
+        <!-- FECHAS -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-calendar-alt"></i> Fechas
+          </h4>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar-check"></i> Fecha Notificación</label>
+          <input type="date" [(ngModel)]="fiscalizacionSeleccionada.fecha_notificacion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar-times"></i> Límite Subsanación</label>
+          <input type="date" [(ngModel)]="fiscalizacionSeleccionada.fecha_limite_subsanacion" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-calendar-plus"></i> Fecha Reinspección</label>
+          <input type="date" [(ngModel)]="fiscalizacionSeleccionada.fecha_reinspeccion" class="form-input-custom">
+        </div>
+
+        <!-- RESULTADO -->
+        <div class="form-group-custom full-width" style="margin-top: 12px; padding-top: 12px; border-top: 2px solid #E5E7EB;">
+          <h4 style="color: #1B5E5E; font-size: 15px; font-weight: 700; margin: 0 0 12px 0;">
+            <i class="fas fa-clipboard-check"></i> Resultado
+          </h4>
+        </div>
+
+        <div class="form-group-custom">
+          <label><i class="fas fa-check-circle"></i> Resultado Final</label>
+          <input type="text" [(ngModel)]="fiscalizacionSeleccionada.resultado_final" class="form-input-custom">
+        </div>
+
+        <div class="form-group-custom full-width">
+          <label><i class="fas fa-comment"></i> Observaciones</label>
+          <textarea [(ngModel)]="fiscalizacionSeleccionada.observaciones" class="form-textarea-custom" rows="3"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer-custom">
+      <button class="btn-modal-cancel" (click)="cerrarModalEditar()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn-modal-save" (click)="guardarFiscalizacion()">
+        <i class="fas fa-save"></i> Guardar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL: SELECCIONAR UBICACIÓN EN MAPA -->
+<!-- ============================================ -->
+<div class="modal-overlay-custom" *ngIf="mostrarMapa" (click)="cerrarMapa()">
+  <div class="modal-content-mapa-custom" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom">
+      <h3>
+        <i class="fas fa-map-marked-alt"></i> Seleccionar Ubicación
+      </h3>
+      <button class="btn-close-modal-custom" (click)="cerrarMapa()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-mapa-custom">
+      <div class="instrucciones-mapa">
+        <i class="fas fa-info-circle"></i>
+        <span>Haz clic en el mapa para seleccionar la ubicación de la fiscalización. Puedes arrastrar el marcador para ajustar la posición.</span>
+      </div>
+      
+      <div id="mapa-fiscalizacion" class="mapa-container"></div>
+      
+      <div *ngIf="selectedLat && selectedLng" class="coordenadas-info">
+        <div class="coord-item">
+          <strong>Latitud:</strong> {{ selectedLat.toFixed(6) }}
+        </div>
+        <div class="coord-item">
+          <strong>Longitud:</strong> {{ selectedLng.toFixed(6) }}
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer-custom">
+      <button class="btn-modal-cancel" (click)="cerrarMapa()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+      <button class="btn-modal-save" (click)="guardarUbicacion()" [disabled]="!selectedLat || !selectedLng">
+        <i class="fas fa-map-pin"></i> Guardar Ubicación
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- MODAL: SELECTOR DE LOCALES EXISTENTES -->
+<!-- ============================================ -->
+<div class="modal-overlay-custom" *ngIf="mostrarSelectorLocales" (click)="cerrarSelectorLocales()">
+  <div class="modal-content-locales-custom" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom">
+      <h3>
+        <i class="fas fa-list"></i> Seleccionar Local Existente
+      </h3>
+      <button class="btn-close-modal-custom" (click)="cerrarSelectorLocales()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body-locales-custom">
+      <div class="buscador-locales">
+        <i class="fas fa-search"></i>
+        <input 
+          type="text" 
+          [(ngModel)]="busquedaLocal" 
+          placeholder="Buscar por expediente, razón social, RUC o dirección..."
+          class="input-busqueda-local"
+        />
+      </div>
+
+      <div class="lista-locales">
+        <div 
+          *ngFor="let local of localesFiltrados" 
+          class="local-item"
+          (click)="seleccionarLocal(local)"
+        >
+          <div class="local-header">
+            <div class="local-expediente">
+              <i class="fas fa-file-alt"></i>
+              <strong>{{ local.expediente }}</strong>
+            </div>
+            <span class="local-estado" [ngClass]="local.estado_licencia">
+              {{ local.estado_licencia || 'N/A' }}
+            </span>
+          </div>
+          <div class="local-info">
+            <div class="info-row">
+              <strong>Razón Social:</strong> {{ local.razon_social || 'N/A' }}
+            </div>
+            <div class="info-row">
+              <strong>RUC:</strong> {{ local.ruc || 'N/A' }}
+            </div>
+            <div class="info-row">
+              <strong>Dirección:</strong> {{ local.direccion || 'N/A' }}
+            </div>
+            <div *ngIf="local.latitud && local.longitud" class="info-row ubicacion-disponible">
+              <i class="fas fa-map-marker-alt"></i> Tiene ubicación GPS registrada
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="localesFiltrados.length === 0" class="sin-locales">
+          <i class="fas fa-inbox"></i>
+          <p>No se encontraron locales</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer-custom">
+      <button class="btn-modal-cancel" (click)="cerrarSelectorLocales()">
+        <i class="fas fa-times"></i> Cancelar
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MAPA DE RECORRIDO -->
+<div *ngIf="mostrarMapaRecorrido" class="modal-overlay" (click)="cerrarMapaRecorrido()">
+  <div class="modal-content modal-recorrido" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom">
+      <h3><i class="fas fa-route"></i> Mapa de Recorrido Optimizado</h3>
+      <button class="btn-close-modal" (click)="cerrarMapaRecorrido()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body-custom">
+      <div *ngIf="rutaCalculada" class="ruta-info">
+        <div class="info-box">
+          <i class="fas fa-route"></i>
+          <div>
+            <strong>Distancia Total:</strong>
+            <span>{{ distanciaTotal }} km</span>
+          </div>
+        </div>
+        <div class="info-box">
+          <i class="fas fa-clock"></i>
+          <div>
+            <strong>Tiempo Estimado:</strong>
+            <span>{{ tiempoTotal }} minutos</span>
+          </div>
+        </div>
+        <div class="info-box">
+          <i class="fas fa-map-marker-alt"></i>
+          <div>
+            <strong>Puntos de Visita:</strong>
+            <span>{{ fiscalizacionesSeleccionadas.length }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div id="mapa-recorrido" style="width: 100%; height: 600px; border-radius: 8px; margin-top: 20px;"></div>
+    </div>
+    
+    <div class="modal-footer-custom">
+      <button class="btn-modal-cancel" (click)="cerrarMapaRecorrido()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+  </div>
+</div>

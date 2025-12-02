@@ -1,0 +1,519 @@
+<div class="reportes-container">
+  <div class="reportes-header">
+    <h1><i class="fas fa-building"></i> LOCALES REGISTRADOS</h1>
+    <div class="header-actions">
+      <button class="btn-export" (click)="exportarExcel()">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+      </button>
+      <button class="btn-export" style="background: #10B981;" (click)="abrirMapaLocales()">
+        <i class="fas fa-map-marked-alt"></i> Ver Mapa de Locales
+      </button>
+      <button class="btn-refresh" (click)="cargarLocales()">
+        <i class="fas fa-sync-alt"></i> Actualizar
+      </button>
+    </div>
+  </div>
+
+  <!-- ⭐ CONTENEDOR ÚNICO PRINCIPAL -->
+  <div class="contenedor-principal">
+    <!-- FILTROS -->
+    <div class="filtros-container">
+      <div class="filtro-item">
+        <label><i class="fas fa-search"></i> Expediente</label>
+        <input 
+          type="text" 
+          [(ngModel)]="filtroExpediente" 
+          (ngModelChange)="filtrarLocales()" 
+          placeholder="Buscar por expediente..." 
+        />
+      </div>
+
+      <div class="filtro-item">
+        <label><i class="fas fa-calendar-alt"></i> Año</label>
+        <select [(ngModel)]="filtroAnio" (ngModelChange)="filtrarLocales()">
+          <option value="">Todos los años</option>
+          <option *ngFor="let anio of getAniosDisponibles()" [value]="anio">{{ anio }}</option>
+        </select>
+      </div>
+
+      <div class="filtro-item">
+        <label><i class="fas fa-clipboard-list"></i> Tipo</label>
+        <select [(ngModel)]="filtroTipo" (ngModelChange)="filtrarLocales()">
+          <option value="">Todos los tipos</option>
+          <option value="ITSE">ITSE</option>
+          <option value="ECSE">ECSE</option>
+        </select>
+      </div>
+
+      <div class="filtro-item">
+        <label><i class="fas fa-exclamation-triangle"></i> Riesgo</label>
+        <select [(ngModel)]="filtroRiesgo" (ngModelChange)="filtrarLocales()">
+          <option value="">Todos los riesgos</option>
+          <option value="BAJO">BAJO</option>
+          <option value="MEDIO">MEDIO</option>
+          <option value="ALTO">ALTO</option>
+          <option value="MUY ALTO">MUY ALTO</option>
+          <option value="ECSE">ECSE</option>
+        </select>
+      </div>
+
+      <div class="filtro-item">
+        <label><i class="fas fa-check-circle"></i> Estado Licencia</label>
+        <select [(ngModel)]="filtroEstadoLicencia" (ngModelChange)="filtrarLocales()">
+          <option value="">Todos los estados</option>
+          <option value="VIGENTE">VIGENTE</option>
+          <option value="VENCIDO">VENCIDO</option>
+        </select>
+      </div>
+
+      <div class="filtro-item">
+        <label><i class="fas fa-calendar"></i> Mes</label>
+        <select [(ngModel)]="filtroMes" (ngModelChange)="filtrarLocales()">
+          <option value="">Todos los meses</option>
+          <option value="01">Enero</option>
+          <option value="02">Febrero</option>
+          <option value="03">Marzo</option>
+          <option value="04">Abril</option>
+          <option value="05">Mayo</option>
+          <option value="06">Junio</option>
+          <option value="07">Julio</option>
+          <option value="08">Agosto</option>
+          <option value="09">Septiembre</option>
+          <option value="10">Octubre</option>
+          <option value="11">Noviembre</option>
+          <option value="12">Diciembre</option>
+        </select>
+      </div>
+
+      <div class="filtro-item">
+        <button class="btn-limpiar" (click)="limpiarFiltros()">
+          <i class="fas fa-eraser"></i> Limpiar Filtros
+        </button>
+      </div>
+    </div>
+
+    <!-- TABLA DE LOCALES -->
+    <div class="tabla-container">
+    <table class="tabla-reportes">
+      <thead>
+        <tr>
+          <th>TIPO</th>
+          <th>RIESGO</th>
+          <th>EXPEDIENTE</th>
+          <th>SOLICITANTE</th>
+          <th>RAZÓN SOCIAL</th>
+          <th>N° RESOLUCIÓN</th>
+          <th>N° CERTIFICADO</th>
+          <th>VIGENCIA</th>
+          <th>ESTADO</th>
+          <th style="width: 120px;">ACCIONES</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let local of paginados">
+          <td>
+            <span class="badge badge-tipo">{{ local.tipo_tramite || 'ITSE' }}</span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="getRiesgoClass(local.riesgo)">
+              {{ local.riesgo }}
+            </span>
+          </td>
+          <td><strong>{{ local.expediente }}</strong></td>
+          <td>{{ local.solicitante }}</td>
+          <td>{{ local.razon_social }}</td>
+          <td>{{ local.num_resolucion }}</td>
+          <td>{{ local.num_certificado }}</td>
+          <td>{{ local.vigencia }}</td>
+          <td>
+            <span class="badge" [ngClass]="getEstadoClass(local.estado_licencia)">
+              {{ local.estado_licencia }}
+            </span>
+          </td>
+          <td>
+            <div class="acciones-grupo">
+              <button class="btn-accion btn-ver" (click)="verDetalle(local)" title="Ver detalle">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn-accion btn-whatsapp" (click)="enviarWhatsApp(local)" title="Enviar WhatsApp">
+                <i class="fab fa-whatsapp"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <tr *ngIf="paginados.length === 0">
+          <td colspan="10" class="sin-datos">
+            <i class="fas fa-inbox"></i>
+            <p>No hay locales registrados</p>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+    <!-- PAGINACIÓN -->
+    <div class="paginacion-container">
+      <button class="btn-pag" (click)="cambiarPagina(paginaActual - 1)" [disabled]="paginaActual === 1">
+        <i class="fas fa-chevron-left"></i> Anterior
+      </button>
+      
+      <div class="paginas-numeros">
+        <button 
+          *ngFor="let p of getPaginasArray()" 
+          class="btn-numero" 
+          [class.activo]="p === paginaActual"
+          (click)="irAPagina(p)">
+          {{ p }}
+        </button>
+      </div>
+      
+      <button class="btn-pag" (click)="cambiarPagina(paginaActual + 1)" [disabled]="paginaActual === totalPaginas">
+        Siguiente <i class="fas fa-chevron-right"></i>
+      </button>
+    </div>
+
+    <div class="info-paginacion">
+      Mostrando {{ (paginaActual - 1) * itemsPorPagina + 1 }} - 
+      {{ Math.min(paginaActual * itemsPorPagina, localesFiltrados.length) }} 
+      de {{ localesFiltrados.length }} locales
+    </div>
+  </div><!-- FIN CONTENEDOR PRINCIPAL -->
+</div>
+
+<!-- ==================== MODAL VER DETALLE ==================== -->
+<div *ngIf="showModalDetalle" class="modal-overlay" (click)="cerrarModalDetalle()">
+  <div class="modal-detalle" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-title">
+        <i class="fas fa-file-alt"></i>
+        <h2>Detalle del Local</h2>
+      </div>
+      <button class="btn-cerrar" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- LOADING -->
+      <div *ngIf="cargandoDetalle" class="loading-detalle">
+        <i class="fas fa-spinner fa-spin"></i>
+        <p>Cargando información...</p>
+      </div>
+
+      <!-- ERROR -->
+      <div *ngIf="errorDetalle" class="error-detalle">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ errorDetalle }}</p>
+      </div>
+
+      <!-- TABS -->
+      <div *ngIf="!cargandoDetalle && !errorDetalle && detalle" class="tabs-container">
+        <div class="tabs-header">
+          <button 
+            class="tab-btn" 
+            [class.activa]="tabActiva === 'solicitante'"
+            (click)="cambiarTab('solicitante')">
+            <i class="fas fa-user"></i> Solicitante
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.activa]="tabActiva === 'establecimiento'"
+            (click)="cambiarTab('establecimiento')">
+            <i class="fas fa-building"></i> Establecimiento
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.activa]="tabActiva === 'tecnicos'"
+            (click)="cambiarTab('tecnicos')">
+            <i class="fas fa-wrench"></i> Datos Técnicos
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.activa]="tabActiva === 'certificacion'"
+            (click)="cambiarTab('certificacion')">
+            <i class="fas fa-certificate"></i> Certificación
+          </button>
+          <button 
+            class="tab-btn" 
+            [class.activa]="tabActiva === 'archivos'"
+            (click)="cambiarTab('archivos')">
+            <i class="fas fa-folder-open"></i> Archivos
+          </button>
+        </div>
+
+        <!-- TAB SOLICITANTE -->
+        <div *ngIf="tabActiva === 'solicitante'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item">
+              <label>Nombres y Apellidos:</label>
+              <input type="text" [value]="detalle.nombres_apellidos || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>DNI/CE:</label>
+              <input type="text" [value]="detalle.dni_ce || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Correo:</label>
+              <input type="text" [value]="detalle.correo || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Teléfonos:</label>
+              <input type="text" [value]="detalle.telefonos || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Domicilio:</label>
+              <input type="text" [value]="detalle.domicilio || 'SIN DATO'" readonly />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB ESTABLECIMIENTO -->
+        <div *ngIf="tabActiva === 'establecimiento'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item">
+              <label>Razón Social:</label>
+              <input type="text" [value]="detalle.razon_social || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>RUC:</label>
+              <input type="text" [value]="detalle.ruc || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Nombre Comercial:</label>
+              <input type="text" [value]="detalle.nombre_comercial || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Tel. Establecimiento:</label>
+              <input type="text" [value]="detalle.telefonos_establecimiento || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Dirección:</label>
+              <input type="text" [value]="detalle.direccion || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Referencia:</label>
+              <input type="text" [value]="detalle.referencia || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Localidad:</label>
+              <input type="text" [value]="detalle.localidad || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Distrito:</label>
+              <input type="text" [value]="detalle.distrito || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Provincia:</label>
+              <input type="text" [value]="detalle.provincia || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Departamento:</label>
+              <input type="text" [value]="detalle.departamento || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Giro/Actividades:</label>
+              <input type="text" [value]="detalle.giro_actividades || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Horario de Atención:</label>
+              <input type="text" [value]="detalle.horario_atencion || 'SIN DATO'" readonly />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB DATOS TÉCNICOS -->
+        <div *ngIf="tabActiva === 'tecnicos'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item">
+              <label>Actividad Específica:</label>
+              <input type="text" [value]="detalle.actividad_especifica || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Ocupada (m²):</label>
+              <input type="text" [value]="detalle.area_ocupada || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Terreno (m²):</label>
+              <input type="text" [value]="detalle.area_terreno || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Techada por Nivel (m²):</label>
+              <input type="text" [value]="detalle.area_techada_por_nivel || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Área Libre (m²):</label>
+              <input type="text" [value]="detalle.area_libre || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Número de Pisos:</label>
+              <input type="text" [value]="detalle.num_pisos || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Piso Ubicado:</label>
+              <input type="text" [value]="detalle.piso_ubicado || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Aforo Declarado:</label>
+              <input type="text" [value]="detalle.aforo_declarado || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Antigüedad Edificación (años):</label>
+              <input type="text" [value]="detalle.antiguedad_edificacion_anios || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Antigüedad Actividad (años):</label>
+              <input type="text" [value]="detalle.antiguedad_actividad_anios || 'SIN DATO'" readonly />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB CERTIFICACIÓN -->
+        <div *ngIf="tabActiva === 'certificacion'" class="tab-content fade-in">
+          <div class="form-grid">
+            <div class="form-item">
+              <label>N° Expediente:</label>
+              <input type="text" [value]="detalle.numerodeexpediente || detalle.expediente || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Tipo de Trámite:</label>
+              <input type="text" [value]="detalle.tipo_tramite || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Tipo ITSE/ECSE:</label>
+              <input type="text" [value]="detalle.tipo_itse || detalle.tipo_ecse || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Nivel de Riesgo:</label>
+              <input type="text" [value]="detalle.riesgo_incendio || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Inspector Asignado:</label>
+              <input type="text" [value]="detalle.inspector_asignado || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>N° de Resolución:</label>
+              <input type="text" [value]="detalle.num_resolucion || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>N° de Certificado:</label>
+              <input type="text" [value]="detalle.num_certificado || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Vigencia:</label>
+              <input type="text" [value]="detalle.vigencia || 'SIN DATO'" readonly />
+            </div>
+            <div class="form-item">
+              <label>Estado Licencia:</label>
+              <input type="text" [value]="detalle.estado_licencia || 'SIN DATO'" readonly />
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB ARCHIVOS -->
+        <div *ngIf="tabActiva === 'archivos'" class="tab-content fade-in">
+          <div class="archivos-section">
+            <h4><i class="fas fa-paperclip"></i> Archivos Adjuntos</h4>
+            <div *ngIf="detalle.archivos && detalle.archivos.length > 0" class="archivos-lista">
+              <div *ngFor="let archivo of detalle.archivos" class="archivo-item">
+                <a [href]="getArchivoUrl(archivo)" target="_blank" class="archivo-link">
+                  <i class="fas fa-file-pdf"></i>
+                  {{ archivo.archivo_nombre || 'Archivo' }}
+                </a>
+              </div>
+            </div>
+            <div *ngIf="!detalle.archivos || detalle.archivos.length === 0" class="no-archivos-mensaje">
+              <i class="fas fa-folder-open"></i>
+              <p>No hay archivos adjuntos</p>
+            </div>
+          </div>
+
+          <!-- PANEL FOTOGRÁFICO -->
+          <div *ngIf="detalle.panelFotografico && detalle.panelFotografico.length > 0" class="panel-fotografico-section">
+            <h4><i class="fas fa-images"></i> Panel Fotográfico</h4>
+            <table class="panel-foto-table">
+              <thead>
+                <tr>
+                  <th>Foto</th>
+                  <th>Descripción</th>
+                  <th>¿Cumple?</th>
+                  <th>Fecha</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let foto of detalle.panelFotografico">
+                  <td>
+                    <img 
+                      [src]="'http://localhost:3000' + foto.imagen_url" 
+                      alt="Foto" 
+                      class="panel-foto"
+                    />
+                  </td>
+                  <td>{{ foto.descripcion }}</td>
+                  <td class="td-cumple">
+                    <span *ngIf="esCumple(foto.cumple)" class="cumple-si">✔️ SÍ</span>
+                    <span *ngIf="!esCumple(foto.cumple)" class="cumple-no">❌ NO</span>
+                  </td>
+                  <td>{{ foto.fecha_creacion | date:'dd/MM/yyyy HH:mm' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER CON BOTONES -->
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="cerrarModalDetalle()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+      <button class="btn-success" (click)="generarExcelDetalle()">
+        <i class="fas fa-file-excel"></i> Exportar Excel
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MAPA DE LOCALES -->
+<div *ngIf="mostrarMapaLocales" class="modal-overlay" (click)="cerrarMapaLocales()">
+  <div class="modal-content modal-recorrido" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom">
+      <h3><i class="fas fa-map-marked-alt"></i> Mapa de Locales</h3>
+      <button class="btn-close-modal" (click)="cerrarMapaLocales()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <div class="modal-body-custom">
+      <div *ngIf="rutaCalculada" class="ruta-info">
+        <div class="info-box">
+          <i class="fas fa-map-marker-alt"></i>
+          <div>
+            <strong>Locales Mostrados:</strong>
+            <span>{{ marcadoresRecorrido.length }}</span>
+          </div>
+        </div>
+        <div class="info-box">
+          <i class="fas fa-info-circle"></i>
+          <div>
+            <strong>Ubicaciones:</strong>
+            <span>Haz clic en los marcadores para ver detalles</span>
+          </div>
+        </div>
+      </div>
+      
+      <div *ngIf="!rutaCalculada" style="padding: 40px; text-align: center; color: #666; background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%); border-radius: 12px; margin-top: 20px;">
+        <i class="fas fa-spinner fa-spin" style="font-size: 32px; margin-bottom: 16px; color: #10B981;"></i>
+        <p style="font-size: 16px; font-weight: 500; margin: 0;">Cargando mapa...</p>
+      </div>
+      
+      <div id="mapa-locales" style="width: 100%; height: 650px; border-radius: 12px; margin-top: 20px; background: #f0f0f0; display: block; position: relative; min-height: 650px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); border: 2px solid #e9ecef;"></div>
+    </div>
+    
+    <div class="modal-footer-custom">
+      <button class="btn-modal-cancel" (click)="cerrarMapaLocales()">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+  </div>
+</div>

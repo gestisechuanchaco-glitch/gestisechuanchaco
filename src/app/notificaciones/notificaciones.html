@@ -1,0 +1,48 @@
+<!-- Ejemplo de estructura de contenedor que recomiendo usar -->
+<!-- Si ya tienes elementos, mantén sus clases y aplica el CSS que sigue -->
+<div class="notifications-wrapper">
+
+  <!-- GRID de tarjetas (si usas tarjetas visibles en la página) -->
+  <div class="notifications-grid">
+    <div class="notification-widget accent-orange">
+      <div class="notification-top"></div>
+      <div class="notification-body">
+        <h4 class="notification-title">Nueva solicitud ITSE</h4>
+        <p class="notification-msg">Se asignó la solicitud 015550-2025-01</p>
+        <div class="notification-meta">21/10/2025</div>
+      </div>
+      <button class="notification-close" aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="notification-widget accent-yellow">
+      <div class="notification-top"></div>
+      <div class="notification-body">
+        <h4 class="notification-title">Licencias vencidas</h4>
+        <p class="notification-msg">8 licencias requieren atención</p>
+        <div class="notification-meta">21/10/2025</div>
+      </div>
+      <button class="notification-close" aria-label="Cerrar">×</button>
+    </div>
+
+    <div class="notification-widget accent-green">
+      <div class="notification-top"></div>
+      <div class="notification-body">
+        <h4 class="notification-title">Certificado aprobado</h4>
+        <p class="notification-msg">Expediente 014599-2025-01 aprobado</p>
+        <div class="notification-meta">21/10/2025</div>
+      </div>
+      <button class="notification-close" aria-label="Cerrar">×</button>
+    </div>
+  </div>
+
+  <!-- Si usas DROP DOWN (campana) -->
+  <div class="noti-dropdown-panel">
+    <div class="noti-dropdown-card">
+      <div class="noti-dropdown-content">
+        <span class="noti-dropdown-msg">Nueva solicitud ITSE</span>
+        <span class="noti-dropdown-badge">21/10/2025</span>
+      </div>
+    </div>
+    <!-- ... -->
+  </div>
+</div>
