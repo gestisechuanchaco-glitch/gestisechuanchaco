@@ -89,6 +89,16 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Manejar redirección desde 404.html (GitHub Pages)
+    const redirectPath = sessionStorage.getItem('redirectPath');
+    if (redirectPath) {
+      sessionStorage.removeItem('redirectPath');
+      // Usar setTimeout para asegurar que Angular esté completamente inicializado
+      setTimeout(() => {
+        this.router.navigateByUrl(redirectPath, { replaceUrl: true });
+      }, 0);
+    }
+    
     // Cargar eventos atendidos desde localStorage
     this.cargarEventosAtendidos();
     

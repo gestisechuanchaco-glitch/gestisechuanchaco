@@ -1,0 +1,28 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>GESTISEC - Redirigiendo...</title>
+  <base href="/gestisechuanchaco/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    var path = window.location.pathname;
+    var base = '/gestisechuanchaco/';
+    var search = window.location.search;
+    var route = path.replace(base, '').replace(/^\//, '').replace(/\/$/, '');
+    if (route === '404.html' || route === '' || route === 'index.html') {
+      window.location.replace(base + 'index.html' + search);
+    } else {
+      var newUrl = base + 'index.html' + search;
+      sessionStorage.setItem('redirectPath', '/' + route);
+      window.location.replace(newUrl);
+    }
+  </script>
+</head>
+<body>
+  <noscript>
+    <p>Redirigiendo...</p>
+    <p>Si no eres redirigido automÃ¡ticamente, <a href="/gestisechuanchaco/index.html">haz clic aquÃ­</a>.</p>
+  </noscript>
+</body>
+</html>
