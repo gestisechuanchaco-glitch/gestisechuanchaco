@@ -88,6 +88,18 @@ if (-not (Test-Path "$targetPath\index.html")) {
     exit 1
 }
 
+# Asegurar que CNAME existe
+$cnamePath = "$targetPath\CNAME"
+if (-not (Test-Path $cnamePath)) {
+    Write-Host ""
+    Write-Host "Creando archivo CNAME..." -ForegroundColor Yellow
+    Set-Content -Path $cnamePath -Value "gestisec.arcode-pe.com" -Encoding UTF8
+    Write-Host "   CNAME creado: gestisec.arcode-pe.com" -ForegroundColor Green
+} else {
+    Write-Host ""
+    Write-Host "Verificacion: CNAME encontrado en docs/" -ForegroundColor Green
+}
+
 # Crear 404.html si no existe
 if (-not (Test-Path "$targetPath\404.html")) {
     $html404 = @'

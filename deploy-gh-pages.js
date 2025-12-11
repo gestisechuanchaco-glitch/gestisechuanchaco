@@ -35,13 +35,19 @@ function copyRecursiveSync(src, dest) {
   }
 }
 
-// Limpiar archivos antiguos en docs (excepto browser y .git)
+// Limpiar archivos antiguos en docs (excepto browser, .git, CNAME, sitemap.xml y google*.html)
 console.log('📁 Limpiando archivos antiguos en docs/...');
-const filesToKeep = ['browser', '.git'];
+const filesToKeep = ['browser', '.git', 'CNAME', 'sitemap.xml'];
+const filesToKeepPatterns = [/^google.*\.html$/i]; // Patrones para archivos que deben preservarse
 if (fs.existsSync(targetDir)) {
   fs.readdirSync(targetDir).forEach(file => {
     const filePath = path.join(targetDir, file);
-    if (!filesToKeep.includes(file)) {
+    
+    // Verificar si el archivo debe preservarse
+    const shouldKeep = filesToKeep.includes(file) || 
+                      filesToKeepPatterns.some(pattern => pattern.test(file));
+    
+    if (!shouldKeep) {
       try {
         const stat = fs.statSync(filePath);
         if (stat.isDirectory()) {
@@ -54,6 +60,8 @@ if (fs.existsSync(targetDir)) {
       } catch (err) {
         console.log(`   ⚠️  No se pudo eliminar: ${file} - ${err.message}`);
       }
+    } else {
+      console.log(`   🔒 Preservado: ${file}`);
     }
   });
 }
@@ -69,6 +77,13 @@ if (fs.existsSync(sourceDir)) {
     }
     const srcPath = path.join(sourceDir, file);
     const destPath = path.join(targetDir, file);
+    
+    // Preservar CNAME y otros archivos importantes si ya existen
+    if (file === 'CNAME' && fs.existsSync(destPath)) {
+      console.log(`   🔒 Preservado: ${file} (archivo de dominio)`);
+      return;
+    }
+    
     try {
       copyRecursiveSync(srcPath, destPath);
       console.log(`   ✅ Copiado: ${file}`);
@@ -103,6 +118,16 @@ if (!fs.existsSync(indexHtmlPath)) {
   console.log('\n✅ Verificación: index.html encontrado en docs/');
 }
 
+// Asegurar que CNAME existe
+const cnamePath = path.join(targetDir, 'CNAME');
+if (!fs.existsSync(cnamePath)) {
+  console.log('\n📝 Creando archivo CNAME...');
+  fs.writeFileSync(cnamePath, 'gestisec.arcode-pe.com\n', 'utf8');
+  console.log('   ✅ CNAME creado: gestisec.arcode-pe.com');
+} else {
+  console.log('\n✅ Verificación: CNAME encontrado en docs/');
+}
+
 console.log('\n✨ ¡Despliegue completado!');
 console.log('📝 Los archivos están listos en docs/ para GitHub Pages');
 console.log('\n💡 Próximos pasos:');
@@ -110,4 +135,4 @@ console.log('   1. git add docs/');
 console.log('   2. git commit -m "Deploy: Actualizar build para GitHub Pages"');
 console.log('   3. git push origin main');
 console.log('\n🌐 Tu sitio estará disponible en:');
-console.log('   https://gestisechuanchaco-glitch.github.io/gestisechuanchaco/\n');
+console.log('   https://gestisec.arcode-pe.com\n');
