@@ -284,11 +284,10 @@ export class PerfilComponent implements OnInit {
                     detail: { fotoUrl: fotoUrlBase } 
                   }));
 
-                  // ⭐ Recargar la foto después de un breve delay para asegurar que se vea
-                  setTimeout(() => {
-                    this.cargarFotoPerfil();
-                  }, 300);
-
+                  // ⭐ NO recargar desde backend inmediatamente (puede fallar con ngrok)
+                  // La foto ya está actualizada en localStorage y en la variable local
+                  // El evento se encargará de actualizar app.ts
+                  
                   alert('✅ Foto actualizada correctamente');
                 } else {
                   this.logger.error('❌ No se recibió URL de foto en la respuesta');

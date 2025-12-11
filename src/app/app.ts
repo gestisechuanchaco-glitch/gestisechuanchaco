@@ -50,10 +50,17 @@ export class App implements OnInit, OnDestroy {
       // Actualizar inmediatamente desde el detalle del evento
       const fotoUrl = this.normalizarFotoUrl(customEvent.detail.fotoUrl);
       this.fotoPerfilUrl = `${fotoUrl}${fotoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      
+      // Actualizar también localStorage
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      user.foto_perfil = customEvent.detail.fotoUrl;
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('foto_perfil', customEvent.detail.fotoUrl);
+      
       this.logger.log('✅ Foto actualizada desde evento:', this.fotoPerfilUrl);
     } else {
-      // Si no hay detalle, recargar desde backend
-      this.cargarFotoPerfil(true);
+      // Si no hay detalle, recargar desde localStorage primero
+      this.cargarFotoDesdeLocalStorage();
     }
   };
   private closeFiltersEvent = () => window.dispatchEvent(new Event('close_filters'));
@@ -204,39 +211,67 @@ export class App implements OnInit, OnDestroy {
         }).subscribe({
           next: (httpResponse) => {
             // Manejar respuesta HTTP completa
-            const response = httpResponse.body;
-            if (response && response.success && response.foto) {
-              const fotoUrl = this.normalizarFotoUrl(response.foto);
-              this.fotoPerfilUrl = forceRefresh 
-                ? `${fotoUrl}${fotoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
-                : fotoUrl;
+            // Verificar si la respuesta es válida (status 200-299)
+            if (httpResponse.status >= 200 && httpResponse.status < 300) {
+              const response = httpResponse.body;
               
-              // Actualizar localStorage
-              localStorage.setItem('foto_perfil', response.foto);
-              user.foto_perfil = response.foto;
-              localStorage.setItem('user', JSON.stringify(user));
+              // Intentar parsear si es string (ngrok puede devolver HTML)
+              let parsedResponse = response;
+              if (typeof response === 'string') {
+                try {
+                  parsedResponse = JSON.parse(response);
+                } catch (e) {
+                  this.logger.warn('⚠️ Respuesta no es JSON válido, usando localStorage');
+                  this.cargarFotoDesdeLocalStorage();
+                  return;
+                }
+              }
               
-              this.logger.log('✅ Foto de perfil cargada desde backend:', this.fotoPerfilUrl);
-            } else if (response && response.success && !response.foto) {
-              // Usuario sin foto, usar localStorage si existe
-              this.logger.log('⚠️ Usuario sin foto en backend');
-              this.cargarFotoDesdeLocalStorage();
+              if (parsedResponse && parsedResponse.success && parsedResponse.foto) {
+                const fotoUrl = this.normalizarFotoUrl(parsedResponse.foto);
+                this.fotoPerfilUrl = forceRefresh 
+                  ? `${fotoUrl}${fotoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
+                  : fotoUrl;
+                
+                // Actualizar localStorage
+                localStorage.setItem('foto_perfil', parsedResponse.foto);
+                user.foto_perfil = parsedResponse.foto;
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                this.logger.log('✅ Foto de perfil cargada desde backend:', this.fotoPerfilUrl);
+              } else if (parsedResponse && parsedResponse.success && !parsedResponse.foto) {
+                // Usuario sin foto, usar localStorage si existe
+                this.logger.log('⚠️ Usuario sin foto en backend');
+                this.cargarFotoDesdeLocalStorage();
+              } else {
+                // Respuesta inválida, intentar desde localStorage
+                this.logger.warn('⚠️ Respuesta inválida del backend:', parsedResponse);
+                this.cargarFotoDesdeLocalStorage();
+              }
             } else {
-              // Respuesta inválida, intentar desde localStorage
-              this.logger.warn('⚠️ Respuesta inválida del backend:', response);
+              // Status fuera del rango 200-299, usar localStorage
+              this.logger.warn('⚠️ Status HTTP inválido:', httpResponse.status);
               this.cargarFotoDesdeLocalStorage();
             }
           },
           error: (err) => {
-            this.logger.error('Error al cargar foto desde backend:', err);
-            this.logger.error('Detalles del error:', {
-              status: err.status,
-              statusText: err.statusText,
-              message: err.message,
-              error: err.error
-            });
-            // Si hay error, intentar desde localStorage
-            this.cargarFotoDesdeLocalStorage();
+            // Manejar errores HTTP (incluyendo cuando ok: false pero status: 200)
+            if (err.status === 200 && err.error) {
+              // Caso especial: status 200 pero Angular lo marca como error
+              // Puede ser que ngrok devolvió HTML en lugar de JSON
+              this.logger.warn('⚠️ Respuesta con status 200 pero marcada como error, usando localStorage');
+              this.cargarFotoDesdeLocalStorage();
+            } else {
+              this.logger.error('Error al cargar foto desde backend:', err);
+              this.logger.error('Detalles del error:', {
+                status: err.status,
+                statusText: err.statusText,
+                message: err.message,
+                error: err.error
+              });
+              // Si hay error, intentar desde localStorage
+              this.cargarFotoDesdeLocalStorage();
+            }
           }
         });
       } else {
