@@ -37,6 +37,7 @@ const upload = multer({ storage });
 app.use(cors({
   origin: [
     'https://gestisechuanchaco-glitch.github.io',
+    'https://gestisec.arcode-pe.com',
     'https://touchedly-unbegrudged-natividad.ngrok-free.dev',
     'http://localhost:4200',
     'http://localhost:3000'
