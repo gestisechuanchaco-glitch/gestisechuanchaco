@@ -219,7 +219,7 @@
             <i class="fas fa-map-marked-alt"></i> Seleccionar Ubicación en el Mapa
           </button>
           <span *ngIf="nuevaFiscalizacion.latitud && nuevaFiscalizacion.longitud" class="ubicacion-info">
-            ✓ Ubicación guardada: {{ nuevaFiscalizacion.latitud?.toFixed(6) }}, {{ nuevaFiscalizacion.longitud?.toFixed(6) }}
+            ✓ Ubicación guardada: {{ nuevaFiscalizacion.latitud.toFixed(6) }}, {{ nuevaFiscalizacion.longitud.toFixed(6) }}
           </span>
         </div>
 
@@ -419,8 +419,8 @@
             <label class="detalle-label-custom">Ubicación GPS:</label>
             <div class="detalle-value-custom ubicacion-gps-detalle">
               <div class="coordenadas-detalle">
-                <span><strong>Lat:</strong> {{ fiscalizacionSeleccionada.latitud?.toFixed(6) || 'N/A' }}</span>
-                <span><strong>Lng:</strong> {{ fiscalizacionSeleccionada.longitud?.toFixed(6) || 'N/A' }}</span>
+                <span><strong>Lat:</strong> {{ fiscalizacionSeleccionada.latitud ? fiscalizacionSeleccionada.latitud.toFixed(6) : 'N/A' }}</span>
+                <span><strong>Lng:</strong> {{ fiscalizacionSeleccionada.longitud ? fiscalizacionSeleccionada.longitud.toFixed(6) : 'N/A' }}</span>
               </div>
               <a [href]="obtenerEnlaceGoogleMaps(fiscalizacionSeleccionada.latitud, fiscalizacionSeleccionada.longitud)" 
                  target="_blank" 

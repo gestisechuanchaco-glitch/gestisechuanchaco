@@ -15,7 +15,12 @@
         </div>
         
         <!-- Avatar con foto (si HAY foto) -->
-        <img [src]="fotoPerfilUrl" alt="Foto de perfil" class="perfil-avatar perfil-avatar-img" *ngIf="fotoPerfilUrl">
+        <img [src]="fotoPerfilUrl" 
+             alt="Foto de perfil" 
+             class="perfil-avatar perfil-avatar-img" 
+             *ngIf="fotoPerfilUrl && fotoPerfilUrl !== ''"
+             (error)="fotoPerfilUrl = ''; $event.stopPropagation()"
+             (load)="logger.log('✅ Foto de perfil cargada en componente perfil:', fotoPerfilUrl)">
         
         <!-- Input file oculto -->
         <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" style="display: none">

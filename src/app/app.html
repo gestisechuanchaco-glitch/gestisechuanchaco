@@ -266,10 +266,15 @@
           <button class="user-btn-nrikon" (click)="toggleUserMenu()">
             
             <!-- Avatar pequeño con foto o iniciales -->
-            <div class="user-avatar-sm-nrikon" *ngIf="!fotoPerfilUrl">
+            <div class="user-avatar-sm-nrikon" *ngIf="!fotoPerfilUrl || fotoPerfilUrl === ''">
               {{ getUsuarioIniciales() }}
             </div>
-            <img [src]="fotoPerfilUrl" alt="Usuario" class="user-avatar-sm-nrikon user-avatar-img-sm" *ngIf="fotoPerfilUrl">
+            <img [src]="fotoPerfilUrl" 
+                 alt="Usuario" 
+                 class="user-avatar-sm-nrikon user-avatar-img-sm" 
+                 *ngIf="fotoPerfilUrl && fotoPerfilUrl !== ''"
+                 (error)="fotoPerfilUrl = ''; $event.stopPropagation()"
+                 (load)="logger.log('✅ Foto de perfil cargada correctamente:', fotoPerfilUrl)">
             
             <span class="user-name-topbar-nrikon">{{ usuarioNombre }}</span>
             <i class="fas fa-chevron-down"></i>
@@ -279,10 +284,15 @@
             <div class="user-dropdown-header-nrikon">
               
               <!-- Avatar grande con foto o iniciales -->
-              <div class="user-avatar-lg-nrikon" *ngIf="!fotoPerfilUrl">
+              <div class="user-avatar-lg-nrikon" *ngIf="!fotoPerfilUrl || fotoPerfilUrl === ''">
                 {{ getUsuarioIniciales() }}
               </div>
-              <img [src]="fotoPerfilUrl" alt="Usuario" class="user-avatar-lg-nrikon user-avatar-img-lg" *ngIf="fotoPerfilUrl">
+              <img [src]="fotoPerfilUrl" 
+                   alt="Usuario" 
+                   class="user-avatar-lg-nrikon user-avatar-img-lg" 
+                   *ngIf="fotoPerfilUrl && fotoPerfilUrl !== ''"
+                   (error)="fotoPerfilUrl = ''; $event.stopPropagation()"
+                   (load)="logger.log('✅ Foto de perfil grande cargada correctamente:', fotoPerfilUrl)">
               
               <h4>{{ usuarioNombre }}</h4>
               <p>{{ usuarioEmail }}</p>

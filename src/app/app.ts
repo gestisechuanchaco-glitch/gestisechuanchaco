@@ -43,10 +43,22 @@ export class App implements OnInit, OnDestroy {
   private apiUrl = `${environment.apiUrl}/api`;
   private pollingInterval: any = null;
   private eventosInterval: any = null;
-  private fotoPerfilEventHandler = () => this.cargarFotoPerfil(true);
+  private fotoPerfilEventHandler = (event: Event) => {
+    const customEvent = event as CustomEvent;
+    if (customEvent.detail?.fotoUrl) {
+      this.logger.log('🔄 Evento foto_perfil_actualizada recibido:', customEvent.detail.fotoUrl);
+      // Actualizar inmediatamente desde el detalle del evento
+      const fotoUrl = this.normalizarFotoUrl(customEvent.detail.fotoUrl);
+      this.fotoPerfilUrl = `${fotoUrl}${fotoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      this.logger.log('✅ Foto actualizada desde evento:', this.fotoPerfilUrl);
+    } else {
+      // Si no hay detalle, recargar desde backend
+      this.cargarFotoPerfil(true);
+    }
+  };
   private closeFiltersEvent = () => window.dispatchEvent(new Event('close_filters'));
 
-  constructor(private router: Router, private location: Location, private http: HttpClient, private logger: LogService, private miService: MlService) {
+  constructor(private router: Router, private location: Location, private http: HttpClient, public logger: LogService, private miService: MlService) {
     this.router.events.subscribe(event => {
       if (event instanceof NavigationEnd) {
       
@@ -180,55 +192,63 @@ export class App implements OnInit, OnDestroy {
   }
 
   cargarFotoPerfil(forceRefresh: boolean = false) {
-    // ⭐ Cargar desde localStorage primero (más rápido)
-    const fotoDesdeLS = this.normalizarFotoUrl(localStorage.getItem('foto_perfil') || '');
-    
-    // ⭐ También intentar obtener desde el objeto user
-    try {
-      const user = JSON.parse(localStorage.getItem('user') || '{}');
-      if (user.foto_perfil) {
-        const normalized = this.normalizarFotoUrl(user.foto_perfil);
-        this.fotoPerfilUrl = forceRefresh
-          ? `${normalized}${normalized.includes('?') ? '&' : '?'}t=${Date.now()}`
-          : normalized;
-        return;
-      }
-    } catch (e) {
-      // Si hay error al parsear, continuar con localStorage directo
-    }
-    
-    // ⭐ Si no hay en user, usar localStorage directo
-    this.fotoPerfilUrl = forceRefresh && fotoDesdeLS
-      ? `${fotoDesdeLS}${fotoDesdeLS.includes('?') ? '&' : '?'}t=${Date.now()}`
-      : fotoDesdeLS;
-    
-    // ⭐ Si hay usuarioId, también intentar cargar desde el backend
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       const usuarioId = user.id || parseInt(localStorage.getItem('usuario_id') || '0');
       
-      if (usuarioId > 0 && !this.fotoPerfilUrl) {
-        // Solo cargar desde backend si no hay foto en localStorage
-        this.http.get<any>(`${this.apiUrl}/perfil/${usuarioId}/foto`).subscribe({
+      // ⭐ SIEMPRE intentar cargar desde el backend primero para asegurar que esté actualizada
+      if (usuarioId > 0) {
+        const timestamp = forceRefresh ? `?t=${Date.now()}` : '';
+        this.http.get<any>(`${this.apiUrl}/perfil/${usuarioId}/foto${timestamp}`).subscribe({
           next: (response) => {
             if (response.success && response.foto) {
-              const normalized = this.normalizarFotoUrl(response.foto);
-              this.fotoPerfilUrl = `${normalized}${normalized.includes('?') ? '&' : '?'}t=${Date.now()}`;
-              localStorage.setItem('foto_perfil', normalized);
+              const fotoUrl = this.normalizarFotoUrl(response.foto);
+              this.fotoPerfilUrl = forceRefresh 
+                ? `${fotoUrl}${fotoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
+                : fotoUrl;
               
-              // Actualizar también en user
-              const user = JSON.parse(localStorage.getItem('user') || '{}');
-              user.foto_perfil = normalized;
+              // Actualizar localStorage
+              localStorage.setItem('foto_perfil', response.foto);
+              user.foto_perfil = response.foto;
               localStorage.setItem('user', JSON.stringify(user));
+              
+              this.logger.log('✅ Foto de perfil cargada desde backend:', this.fotoPerfilUrl);
+            } else {
+              // Si no hay foto en backend, intentar desde localStorage
+              this.cargarFotoDesdeLocalStorage();
             }
           },
           error: (err) => {
-            // Silenciar error, ya tenemos fallback
+            this.logger.error('Error al cargar foto desde backend:', err);
+            // Si hay error, intentar desde localStorage
+            this.cargarFotoDesdeLocalStorage();
           }
         });
+      } else {
+        // Si no hay usuarioId, cargar desde localStorage
+        this.cargarFotoDesdeLocalStorage();
       }
     } catch (e) {
-      // Si hay error, continuar con lo que tenemos
+      this.logger.error('Error al cargar foto de perfil:', e);
+      this.cargarFotoDesdeLocalStorage();
+    }
+  }
+
+  private cargarFotoDesdeLocalStorage() {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      const fotoDesdeLS = user.foto_perfil || localStorage.getItem('foto_perfil') || '';
+      
+      if (fotoDesdeLS) {
+        this.fotoPerfilUrl = this.normalizarFotoUrl(fotoDesdeLS);
+        this.logger.log('✅ Foto de perfil cargada desde localStorage:', this.fotoPerfilUrl);
+      } else {
+        this.fotoPerfilUrl = '';
+        this.logger.log('⚠️ No hay foto de perfil disponible');
+      }
+    } catch (e) {
+      this.logger.error('Error al cargar foto desde localStorage:', e);
+      this.fotoPerfilUrl = '';
     }
   }
 

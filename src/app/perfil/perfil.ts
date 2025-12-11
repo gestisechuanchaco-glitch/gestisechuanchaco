@@ -44,7 +44,7 @@ export class PerfilComponent implements OnInit {
 
   actividadReciente: any[] = [];
 
-  constructor(private http: HttpClient, private logger: LogService) {}
+  constructor(private http: HttpClient, public logger: LogService) {}
 
   ngOnInit() {
     // ⭐ OBTENER USER COMPLETO
@@ -231,33 +231,40 @@ export class PerfilComponent implements OnInit {
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 
                 // ⭐ Usar la URL que viene del backend (ya incluye el dominio completo)
-                const fotoUrlBase = response.foto_perfil;
+                const fotoUrlBase = response.foto_perfil || response.foto;
                 
                 this.logger.log('🖼️ Foto URL recibida del backend:', fotoUrlBase);
 
-                // ⭐ ACTUALIZAR SOLO LA FOTO, SIN PERDER EL roleId
-                user.foto_perfil = fotoUrlBase;
-                
-                // ⭐ GUARDAR DE NUEVO EN LOCALSTORAGE
-                localStorage.setItem('user', JSON.stringify(user));
-                localStorage.setItem('foto_perfil', fotoUrlBase);
+                if (fotoUrlBase) {
+                  // ⭐ ACTUALIZAR SOLO LA FOTO, SIN PERDER EL roleId
+                  user.foto_perfil = fotoUrlBase;
+                  
+                  // ⭐ GUARDAR DE NUEVO EN LOCALSTORAGE
+                  localStorage.setItem('user', JSON.stringify(user));
+                  localStorage.setItem('foto_perfil', fotoUrlBase);
 
-                // ⭐ ACTUALIZAR LA VARIABLE LOCAL INMEDIATAMENTE
-                // Agregar timestamp único para forzar recarga de la imagen (evitar caché)
-                const separador = fotoUrlBase.includes('?') ? '&' : '?';
-                this.fotoPerfilUrl = fotoUrlBase + separador + 't=' + Date.now();
+                  // ⭐ ACTUALIZAR LA VARIABLE LOCAL INMEDIATAMENTE
+                  // Agregar timestamp único para forzar recarga de la imagen (evitar caché)
+                  const separador = fotoUrlBase.includes('?') ? '&' : '?';
+                  this.fotoPerfilUrl = fotoUrlBase + separador + 't=' + Date.now();
 
-                this.logger.log('🖼️ Foto URL actualizada con timestamp:', this.fotoPerfilUrl);
+                  this.logger.log('🖼️ Foto URL actualizada con timestamp:', this.fotoPerfilUrl);
 
-                // ⭐ Recargar la foto después de un breve delay para asegurar que se vea
-                setTimeout(() => {
-                  this.cargarFotoPerfil();
-                }, 200);
+                  // ⭐ Disparar evento global para actualizar foto en app.ts
+                  window.dispatchEvent(new CustomEvent('foto_perfil_actualizada', { 
+                    detail: { fotoUrl: fotoUrlBase } 
+                  }));
 
-              // Notificar al layout (App) que la foto cambió
-              window.dispatchEvent(new Event('foto_perfil_actualizada'));
+                  // ⭐ Recargar la foto después de un breve delay para asegurar que se vea
+                  setTimeout(() => {
+                    this.cargarFotoPerfil();
+                  }, 300);
 
-                alert('✅ Foto actualizada correctamente');
+                  alert('✅ Foto actualizada correctamente');
+                } else {
+                  this.logger.error('❌ No se recibió URL de foto en la respuesta');
+                  alert('Error: No se recibió la URL de la foto');
+                }
               }
             },
             error: (err) => {
