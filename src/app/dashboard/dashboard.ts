@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { NgChartsModule, BaseChartDirective } from 'ng2-charts';
@@ -17,7 +17,7 @@ import * as XLSX from 'xlsx';
   standalone: true,
   imports: [CommonModule, NgChartsModule, FormsModule]
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit, AfterViewInit, OnDestroy {
   
   // FILTROS
   filtroAnio: string = '';
@@ -25,6 +25,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   filtroDia: string = '';
   aniosDisponibles: number[] = [];
   showFilters: boolean = false; // ⭐ PANEL LATERAL
+  private closeFiltersHandler = () => {
+    if (this.showFilters) {
+      this.showFilters = false;
+    }
+  };
   
   // KPIs
   erroresEmision = 0;
@@ -271,6 +276,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   }
 
   ngOnInit() {
+    window.addEventListener('close_filters', this.closeFiltersHandler);
     // Cargar estado de alertas desde localStorage
     this.cargarEstadoAlertas();
 
@@ -310,6 +316,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         this.cargarDatosMapa();
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('close_filters', this.closeFiltersHandler);
   }
 
   cargarEstadoAlertas() {

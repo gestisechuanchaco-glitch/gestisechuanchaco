@@ -520,6 +520,15 @@ export class AjustesComponent implements OnInit {
             if (userIndex !== -1) {
               this.usuarios[userIndex].foto_perfil = response.foto_perfil;
             }
+
+              // Si el administrador está editando su propia foto, actualizar localStorage y notificar
+              const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+              if (currentUser.id && currentUser.id === this.editarUsuarioForm.id) {
+                currentUser.foto_perfil = response.foto_perfil;
+                localStorage.setItem('user', JSON.stringify(currentUser));
+                localStorage.setItem('foto_perfil', response.foto_perfil);
+                window.dispatchEvent(new Event('foto_perfil_actualizada'));
+              }
             
             alert('Foto actualizada correctamente');
           }

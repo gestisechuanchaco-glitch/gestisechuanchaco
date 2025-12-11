@@ -43,6 +43,8 @@ export class App implements OnInit, OnDestroy {
   private apiUrl = `${environment.apiUrl}/api`;
   private pollingInterval: any = null;
   private eventosInterval: any = null;
+  private fotoPerfilEventHandler = () => this.cargarFotoPerfil(true);
+  private closeFiltersEvent = () => window.dispatchEvent(new Event('close_filters'));
 
   constructor(private router: Router, private location: Location, private http: HttpClient, private logger: LogService, private miService: MlService) {
     this.router.events.subscribe(event => {
@@ -90,6 +92,9 @@ export class App implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
+    // Escuchar actualizaciones explícitas de foto de perfil
+    window.addEventListener('foto_perfil_actualizada', this.fotoPerfilEventHandler);
+
     // Manejar redirección desde 404.html (GitHub Pages)
     const redirectPath = sessionStorage.getItem('redirectPath');
     if (redirectPath) {
@@ -143,6 +148,8 @@ export class App implements OnInit, OnDestroy {
   }
   
   ngOnDestroy() {
+    window.removeEventListener('foto_perfil_actualizada', this.fotoPerfilEventHandler);
+
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
     }
@@ -162,15 +169,28 @@ export class App implements OnInit, OnDestroy {
   }
 
  
-  cargarFotoPerfil() {
+  private normalizarFotoUrl(url: string): string {
+    if (!url) return '';
+    const trimmed = url.trim();
+    if (trimmed.startsWith('http') || trimmed.startsWith('data:')) return trimmed;
+
+    const base = environment.apiUrl.replace(/\/$/, '');
+    const path = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return `${base}${path}`;
+  }
+
+  cargarFotoPerfil(forceRefresh: boolean = false) {
     // ⭐ Cargar desde localStorage primero (más rápido)
-    const fotoDesdeLS = localStorage.getItem('foto_perfil') || '';
+    const fotoDesdeLS = this.normalizarFotoUrl(localStorage.getItem('foto_perfil') || '');
     
     // ⭐ También intentar obtener desde el objeto user
     try {
       const user = JSON.parse(localStorage.getItem('user') || '{}');
       if (user.foto_perfil) {
-        this.fotoPerfilUrl = user.foto_perfil;
+        const normalized = this.normalizarFotoUrl(user.foto_perfil);
+        this.fotoPerfilUrl = forceRefresh
+          ? `${normalized}${normalized.includes('?') ? '&' : '?'}t=${Date.now()}`
+          : normalized;
         return;
       }
     } catch (e) {
@@ -178,7 +198,9 @@ export class App implements OnInit, OnDestroy {
     }
     
     // ⭐ Si no hay en user, usar localStorage directo
-    this.fotoPerfilUrl = fotoDesdeLS;
+    this.fotoPerfilUrl = forceRefresh && fotoDesdeLS
+      ? `${fotoDesdeLS}${fotoDesdeLS.includes('?') ? '&' : '?'}t=${Date.now()}`
+      : fotoDesdeLS;
     
     // ⭐ Si hay usuarioId, también intentar cargar desde el backend
     try {
@@ -190,12 +212,13 @@ export class App implements OnInit, OnDestroy {
         this.http.get<any>(`${this.apiUrl}/perfil/${usuarioId}/foto`).subscribe({
           next: (response) => {
             if (response.success && response.foto) {
-              this.fotoPerfilUrl = response.foto;
-              localStorage.setItem('foto_perfil', response.foto);
+              const normalized = this.normalizarFotoUrl(response.foto);
+              this.fotoPerfilUrl = `${normalized}${normalized.includes('?') ? '&' : '?'}t=${Date.now()}`;
+              localStorage.setItem('foto_perfil', normalized);
               
               // Actualizar también en user
               const user = JSON.parse(localStorage.getItem('user') || '{}');
-              user.foto_perfil = response.foto;
+              user.foto_perfil = normalized;
               localStorage.setItem('user', JSON.stringify(user));
             }
           },
@@ -277,6 +300,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   toggleSettings() {
+    this.closeFiltersEvent();
     this.showSettings = !this.showSettings;
     this.showUserMenu = false;
     this.showNotifications = false;
@@ -291,12 +315,14 @@ export class App implements OnInit, OnDestroy {
   }
 
   toggleNotifications() {
+    this.closeFiltersEvent();
     this.showNotifications = !this.showNotifications;
     this.showUserMenu = false;
     this.showSettings = false;
   }
 
   toggleUserMenu() {
+    this.closeFiltersEvent();
     this.showUserMenu = !this.showUserMenu;
     this.showNotifications = false;
     this.showSettings = false;

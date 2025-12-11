@@ -254,6 +254,9 @@ export class PerfilComponent implements OnInit {
                   this.cargarFotoPerfil();
                 }, 200);
 
+              // Notificar al layout (App) que la foto cambió
+              window.dispatchEvent(new Event('foto_perfil_actualizada'));
+
                 alert('✅ Foto actualizada correctamente');
               }
             },
