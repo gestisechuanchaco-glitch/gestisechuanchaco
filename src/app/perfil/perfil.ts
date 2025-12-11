@@ -140,9 +140,13 @@ export class PerfilComponent implements OnInit {
     }
     
     // ⭐ También cargar desde el backend para asegurar que esté actualizada
-    this.http.get<any>(`${this.apiUrl}/perfil/${this.usuarioId}/foto`).subscribe({
-      next: (response) => {
-        if (response.success && response.foto) {
+    this.http.get<any>(`${this.apiUrl}/perfil/${this.usuarioId}/foto`, { 
+      observe: 'response' 
+    }).subscribe({
+      next: (httpResponse) => {
+        // Manejar respuesta HTTP completa
+        const response = httpResponse.body;
+        if (response && response.success && response.foto) {
           // ⭐ Agregar timestamp para evitar caché
           const fotoUrl = response.foto + (response.foto.includes('?') ? '&' : '?') + 't=' + Date.now();
           this.fotoPerfilUrl = fotoUrl;
@@ -152,13 +156,30 @@ export class PerfilComponent implements OnInit {
           user.foto_perfil = response.foto;
           localStorage.setItem('user', JSON.stringify(user));
           localStorage.setItem('foto_perfil', response.foto);
-        } else if (!this.fotoPerfilUrl) {
-          // Solo usar fallback si no hay foto
-          this.fotoPerfilUrl = fotoDesdeLS;
+          
+          this.logger.log('✅ Foto cargada desde backend en componente perfil:', this.fotoPerfilUrl);
+        } else if (response && response.success && !response.foto) {
+          // Usuario sin foto en backend
+          this.logger.log('⚠️ Usuario sin foto en backend, usando localStorage si existe');
+          if (!this.fotoPerfilUrl && fotoDesdeLS) {
+            this.fotoPerfilUrl = fotoDesdeLS + (fotoDesdeLS.includes('?') ? '&' : '?') + 't=' + Date.now();
+          }
+        } else {
+          // Respuesta inválida
+          this.logger.warn('⚠️ Respuesta inválida del backend:', response);
+          if (!this.fotoPerfilUrl && fotoDesdeLS) {
+            this.fotoPerfilUrl = fotoDesdeLS + (fotoDesdeLS.includes('?') ? '&' : '?') + 't=' + Date.now();
+          }
         }
       },
       error: (err) => {
         this.logger.error('Error al cargar foto:', err);
+        this.logger.error('Detalles del error:', {
+          status: err.status,
+          statusText: err.statusText,
+          message: err.message,
+          error: err.error
+        });
         // Si hay error pero tenemos foto en localStorage, usarla
         if (!this.fotoPerfilUrl && fotoDesdeLS) {
           this.fotoPerfilUrl = fotoDesdeLS + (fotoDesdeLS.includes('?') ? '&' : '?') + 't=' + Date.now();
@@ -221,12 +242,20 @@ export class PerfilComponent implements OnInit {
       formData.append('foto', file);
 
       if (this.usuarioId > 0) {
-        this.http.post<any>(`${this.apiUrl}/perfil/${this.usuarioId}/foto`, formData)
+        this.http.post<any>(`${this.apiUrl}/perfil/${this.usuarioId}/foto`, formData, {
+          observe: 'response'
+        })
           .subscribe({
-            next: (response) => {
-              if (response.success) {
-                this.logger.log('✅ Foto subida:', response);
+            next: (httpResponse) => {
+              // Manejar respuesta HTTP completa
+              const response = httpResponse.body;
+              this.logger.log('✅ Respuesta completa del servidor:', {
+                status: httpResponse.status,
+                statusText: httpResponse.statusText,
+                body: response
+              });
 
+              if (response && response.success) {
                 // ⭐ OBTENER EL USER COMPLETO DEL LOCALSTORAGE
                 const user = JSON.parse(localStorage.getItem('user') || '{}');
                 
@@ -263,13 +292,23 @@ export class PerfilComponent implements OnInit {
                   alert('✅ Foto actualizada correctamente');
                 } else {
                   this.logger.error('❌ No se recibió URL de foto en la respuesta');
+                  this.logger.error('Respuesta completa:', response);
                   alert('Error: No se recibió la URL de la foto');
                 }
+              } else {
+                this.logger.error('❌ Respuesta sin success:', response);
+                alert('Error al subir la foto: ' + (response?.message || 'Error desconocido'));
               }
             },
             error: (err) => {
               this.logger.error('❌ Error al subir foto:', err);
-              alert('Error al subir la foto: ' + (err.error?.message || 'Error desconocido'));
+              this.logger.error('Detalles del error:', {
+                status: err.status,
+                statusText: err.statusText,
+                message: err.message,
+                error: err.error
+              });
+              alert('Error al subir la foto: ' + (err.error?.message || err.message || 'Error desconocido'));
             }
           });
       } else {

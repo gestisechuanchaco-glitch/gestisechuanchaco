@@ -199,9 +199,13 @@ export class App implements OnInit, OnDestroy {
       // ⭐ SIEMPRE intentar cargar desde el backend primero para asegurar que esté actualizada
       if (usuarioId > 0) {
         const timestamp = forceRefresh ? `?t=${Date.now()}` : '';
-        this.http.get<any>(`${this.apiUrl}/perfil/${usuarioId}/foto${timestamp}`).subscribe({
-          next: (response) => {
-            if (response.success && response.foto) {
+        this.http.get<any>(`${this.apiUrl}/perfil/${usuarioId}/foto${timestamp}`, { 
+          observe: 'response' 
+        }).subscribe({
+          next: (httpResponse) => {
+            // Manejar respuesta HTTP completa
+            const response = httpResponse.body;
+            if (response && response.success && response.foto) {
               const fotoUrl = this.normalizarFotoUrl(response.foto);
               this.fotoPerfilUrl = forceRefresh 
                 ? `${fotoUrl}${fotoUrl.includes('?') ? '&' : '?'}t=${Date.now()}`
@@ -213,13 +217,24 @@ export class App implements OnInit, OnDestroy {
               localStorage.setItem('user', JSON.stringify(user));
               
               this.logger.log('✅ Foto de perfil cargada desde backend:', this.fotoPerfilUrl);
+            } else if (response && response.success && !response.foto) {
+              // Usuario sin foto, usar localStorage si existe
+              this.logger.log('⚠️ Usuario sin foto en backend');
+              this.cargarFotoDesdeLocalStorage();
             } else {
-              // Si no hay foto en backend, intentar desde localStorage
+              // Respuesta inválida, intentar desde localStorage
+              this.logger.warn('⚠️ Respuesta inválida del backend:', response);
               this.cargarFotoDesdeLocalStorage();
             }
           },
           error: (err) => {
             this.logger.error('Error al cargar foto desde backend:', err);
+            this.logger.error('Detalles del error:', {
+              status: err.status,
+              statusText: err.statusText,
+              message: err.message,
+              error: err.error
+            });
             // Si hay error, intentar desde localStorage
             this.cargarFotoDesdeLocalStorage();
           }
